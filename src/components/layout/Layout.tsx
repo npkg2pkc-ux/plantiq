@@ -372,7 +372,7 @@ const Header = () => {
     try {
       // Update local state first for instant feedback
       markAsRead(notifId);
-      
+
       // Update backend
       const { updateData, SHEETS } = await import("@/services/api");
       await updateData(SHEETS.NOTIFICATIONS, { id: notifId, read: true });
@@ -386,7 +386,7 @@ const Header = () => {
     try {
       // Update local state first for instant feedback
       markAllAsRead();
-      
+
       // Update backend for all unread notifications
       const { updateData, SHEETS } = await import("@/services/api");
       const unreadNotifs = notifications.filter((n) => !n.read);
