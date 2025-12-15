@@ -367,6 +367,37 @@ const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  // Handle mark notification as read - also update backend
+  const handleMarkAsRead = async (notifId: string) => {
+    try {
+      // Update local state first for instant feedback
+      markAsRead(notifId);
+      
+      // Update backend
+      const { updateData, SHEETS } = await import("@/services/api");
+      await updateData(SHEETS.NOTIFICATIONS, { id: notifId, read: true });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  // Handle mark all notifications as read - also update backend
+  const handleMarkAllAsRead = async () => {
+    try {
+      // Update local state first for instant feedback
+      markAllAsRead();
+      
+      // Update backend for all unread notifications
+      const { updateData, SHEETS } = await import("@/services/api");
+      const unreadNotifs = notifications.filter((n) => !n.read);
+      for (const notif of unreadNotifs) {
+        await updateData(SHEETS.NOTIFICATIONS, { id: notif.id, read: true });
+      }
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
   // Load notifications from backend
   useEffect(() => {
     const loadNotifications = async () => {
@@ -375,12 +406,22 @@ const Header = () => {
         const result = await readData(SHEETS.NOTIFICATIONS);
         if (result.success && result.data) {
           // Filter notifications for current user (exclude self-generated)
-          const userNotifications = (result.data as any[]).filter(
-            (n) =>
-              n.toUser === "ALL" ||
-              n.toUser === user?.username ||
-              (n.fromPlant === user?.plant && n.fromUser !== user?.username)
-          );
+          // User should NOT see their own notifications
+          const userNotifications = (result.data as any[]).filter((n) => {
+            // Exclude notifications created by the current user
+            if (n.fromUser === user?.username) {
+              return false;
+            }
+            // Include if targeted to ALL or specifically to this user
+            if (n.toUser === "ALL" || n.toUser === user?.username) {
+              return true;
+            }
+            // Include if from same plant (broadcast within plant)
+            if (n.fromPlant === user?.plant) {
+              return true;
+            }
+            return false;
+          });
           // Sort by timestamp descending
           const sorted = userNotifications.sort(
             (a, b) =>
@@ -486,7 +527,7 @@ const Header = () => {
                     <h3 className="font-semibold text-dark-900">Notifikasi</h3>
                     {unreadCount > 0 && (
                       <button
-                        onClick={markAllAsRead}
+                        onClick={handleMarkAllAsRead}
                         className="text-xs text-primary-600 hover:text-primary-700"
                       >
                         Tandai semua dibaca
@@ -503,7 +544,7 @@ const Header = () => {
                       notifications.slice(0, 10).map((notif) => (
                         <div
                           key={notif.id}
-                          onClick={() => markAsRead(notif.id)}
+                          onClick={() => handleMarkAsRead(notif.id)}
                           className={cn(
                             "px-4 py-3 border-b border-dark-50 cursor-pointer hover:bg-dark-50 transition-colors",
                             !notif.read && "bg-primary-50"
