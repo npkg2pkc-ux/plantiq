@@ -255,7 +255,7 @@ const Sidebar = () => {
           <Link to="/dashboard" className="flex items-center gap-3">
             <img src="/favicon.png" alt="PlantIQ Logo" className="h-9 w-9" />
             <span className="font-display font-bold text-dark-900">
-              Prodexa
+              Plantiffy
             </span>
           </Link>
         )}
