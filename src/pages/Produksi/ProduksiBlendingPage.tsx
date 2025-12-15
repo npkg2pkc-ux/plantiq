@@ -412,7 +412,11 @@ const ProduksiBlendingPage = ({ type }: ProduksiBlendingPageProps) => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="secondary" size="sm" onClick={() => setShowPrintModal(true)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowPrintModal(true)}
+          >
             <Printer className="h-4 w-4 mr-2" />
             Cetak
           </Button>
@@ -697,26 +701,46 @@ const ProduksiBlendingPage = ({ type }: ProduksiBlendingPageProps) => {
         plant={plant === "NPK1" ? "NPK Plant 1" : "NPK Plant 2"}
         data={data as unknown as Record<string, unknown>[]}
         columns={[
-          { key: "tanggal", header: "Tanggal", render: (v) => formatDate(v as string), width: "80px" },
+          {
+            key: "tanggal",
+            header: "Tanggal",
+            render: (v) => formatDate(v as string),
+            width: "80px",
+          },
           { key: "kategori", header: "Kategori", width: "70px" },
           { key: "formula", header: "Formula", width: "120px" },
-          { key: "tonase", header: "Tonase (Ton)", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "80px" },
+          {
+            key: "tonase",
+            header: "Tonase (Ton)",
+            render: (v) => formatNumber(parseNumber(v)),
+            align: "right",
+            width: "80px",
+          },
         ]}
-        filters={type === "blending" ? {
-          kategori: {
-            label: "Kategori",
-            options: [
-              { value: "Fresh", label: "Fresh" },
-              { value: "Oversack", label: "Oversack" },
-            ]
-          }
-        } : undefined}
+        filters={
+          type === "blending"
+            ? {
+                kategori: {
+                  label: "Kategori",
+                  options: [
+                    { value: "Fresh", label: "Fresh" },
+                    { value: "Oversack", label: "Oversack" },
+                  ],
+                },
+              }
+            : undefined
+        }
         signatures={[
           { role: "mengetahui", label: "Mengetahui" },
           { role: "pembuat", label: "Pembuat" },
         ]}
         summaryRows={[
-          { label: "Total Tonase:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.tonase), 0)) + " Ton" },
+          {
+            label: "Total Tonase:",
+            getValue: (d) =>
+              formatNumber(d.reduce((s, i) => s + parseNumber(i.tonase), 0)) +
+              " Ton",
+          },
         ]}
       />
     </div>

@@ -364,7 +364,11 @@ const ProduksiNPKMiniPage = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="secondary" size="sm" onClick={() => setShowPrintModal(true)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowPrintModal(true)}
+          >
             <Printer className="h-4 w-4 mr-2" />
             Cetak
           </Button>
@@ -618,16 +622,32 @@ const ProduksiNPKMiniPage = () => {
         plant="NPK Plant 2"
         data={data as unknown as Record<string, unknown>[]}
         columns={[
-          { key: "tanggal", header: "Tanggal", render: (v) => formatDate(v as string), width: "100px" },
+          {
+            key: "tanggal",
+            header: "Tanggal",
+            render: (v) => formatDate(v as string),
+            width: "100px",
+          },
           { key: "formulasi", header: "Formulasi", width: "150px" },
-          { key: "tonase", header: "Tonase (Ton)", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "100px" },
+          {
+            key: "tonase",
+            header: "Tonase (Ton)",
+            render: (v) => formatNumber(parseNumber(v)),
+            align: "right",
+            width: "100px",
+          },
         ]}
         signatures={[
           { role: "mengetahui", label: "Mengetahui" },
           { role: "pembuat", label: "Pembuat" },
         ]}
         summaryRows={[
-          { label: "Total Tonase:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.tonase), 0)) + " Ton" },
+          {
+            label: "Total Tonase:",
+            getValue: (d) =>
+              formatNumber(d.reduce((s, i) => s + parseNumber(i.tonase), 0)) +
+              " Ton",
+          },
         ]}
       />
     </div>
