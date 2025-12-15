@@ -13,6 +13,7 @@ import {
   DataTable,
   SuccessOverlay,
   ApprovalDialog,
+  PrintModal,
 } from "@/components/ui";
 import { useAuthStore } from "@/stores";
 import {
@@ -65,6 +66,7 @@ const TimesheetLoaderPage = ({ plant }: TimesheetLoaderPageProps) => {
   const [showForm, setShowForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<TimesheetLoader>(initialFormState);
@@ -423,7 +425,7 @@ const TimesheetLoaderPage = ({ plant }: TimesheetLoaderPageProps) => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" onClick={() => setShowPrintModal(true)}>
             <Printer className="h-4 w-4 mr-2" />
             Cetak
           </Button>
@@ -669,6 +671,40 @@ const TimesheetLoaderPage = ({ plant }: TimesheetLoaderPageProps) => {
         isVisible={showSuccess}
         message="Data berhasil disimpan!"
         onClose={() => setShowSuccess(false)}
+      />
+
+      {/* Print Modal */}
+      <PrintModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        title="Timesheet Loader"
+        plant={plant === "NPK1" ? "NPK Plant 1" : "NPK Plant 2"}
+        data={data as unknown as Record<string, unknown>[]}
+        columns={[
+          { key: "tanggal", header: "Tanggal", render: (v) => formatDate(v as string), width: "70px" },
+          { key: "shift", header: "Shift", width: "50px" },
+          { key: "deskripsiTemuan", header: "Deskripsi Temuan", width: "120px" },
+          { key: "jamOff", header: "Jam Off", render: (v) => formatTime(v as string), width: "50px" },
+          { key: "jamStart", header: "Jam Start", render: (v) => formatTime(v as string), width: "55px" },
+          { key: "jamGrounded", header: "Grounded", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "55px" },
+          { key: "jamOperasi", header: "Operasi", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "50px" },
+          { key: "keterangan", header: "Status", width: "60px" },
+        ]}
+        filters={{
+          shift: {
+            label: "Shift",
+            options: shiftOptions.filter(o => o.value !== "ALL")
+          }
+        }}
+        signatures={[
+          { role: "mengetahui", label: "Mengetahui" },
+          { role: "menyetujui", label: "Menyetujui" },
+          { role: "operator", label: "Operator Loader" },
+        ]}
+        summaryRows={[
+          { label: "Total Jam Grounded:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.jamGrounded), 0)) + " Jam" },
+          { label: "Total Jam Operasi:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.jamOperasi), 0)) + " Jam" },
+        ]}
       />
     </div>
   );

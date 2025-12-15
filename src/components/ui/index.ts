@@ -46,3 +46,5 @@ export {
   TableSkeleton,
   SuccessOverlay,
 } from "./Loading";
+
+export { default as PrintModal } from "./PrintModal";

@@ -20,6 +20,7 @@ import {
   DataTable,
   SuccessOverlay,
   ApprovalDialog,
+  PrintModal,
 } from "@/components/ui";
 import { useAuthStore } from "@/stores";
 import {
@@ -54,6 +55,7 @@ const ProduksiBlendingPage = ({ type }: ProduksiBlendingPageProps) => {
   const [showForm, setShowForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isCustomFormula, setIsCustomFormula] = useState(false);
@@ -410,7 +412,7 @@ const ProduksiBlendingPage = ({ type }: ProduksiBlendingPageProps) => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" onClick={() => setShowPrintModal(true)}>
             <Printer className="h-4 w-4 mr-2" />
             Cetak
           </Button>
@@ -685,6 +687,37 @@ const ProduksiBlendingPage = ({ type }: ProduksiBlendingPageProps) => {
         isVisible={showSuccess}
         message="Data berhasil disimpan!"
         onClose={() => setShowSuccess(false)}
+      />
+
+      {/* Print Modal */}
+      <PrintModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        title={pageTitle}
+        plant={plant === "NPK1" ? "NPK Plant 1" : "NPK Plant 2"}
+        data={data as unknown as Record<string, unknown>[]}
+        columns={[
+          { key: "tanggal", header: "Tanggal", render: (v) => formatDate(v as string), width: "80px" },
+          { key: "kategori", header: "Kategori", width: "70px" },
+          { key: "formula", header: "Formula", width: "120px" },
+          { key: "tonase", header: "Tonase (Ton)", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "80px" },
+        ]}
+        filters={type === "blending" ? {
+          kategori: {
+            label: "Kategori",
+            options: [
+              { value: "Fresh", label: "Fresh" },
+              { value: "Oversack", label: "Oversack" },
+            ]
+          }
+        } : undefined}
+        signatures={[
+          { role: "mengetahui", label: "Mengetahui" },
+          { role: "pembuat", label: "Pembuat" },
+        ]}
+        summaryRows={[
+          { label: "Total Tonase:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.tonase), 0)) + " Ton" },
+        ]}
       />
     </div>
   );

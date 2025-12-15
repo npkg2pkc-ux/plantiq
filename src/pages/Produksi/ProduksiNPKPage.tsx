@@ -19,6 +19,7 @@ import {
   DataTable,
   SuccessOverlay,
   ApprovalDialog,
+  PrintModal,
 } from "@/components/ui";
 import { useAuthStore } from "@/stores";
 import {
@@ -61,6 +62,7 @@ const ProduksiNPKPage = ({ plant }: ProduksiNPKPageProps) => {
   const [showForm, setShowForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<ProduksiNPK>(initialFormState);
@@ -450,7 +452,7 @@ const ProduksiNPKPage = ({ plant }: ProduksiNPKPageProps) => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button variant="secondary" size="sm">
+          <Button variant="secondary" size="sm" onClick={() => setShowPrintModal(true)}>
             <Printer className="h-4 w-4 mr-2" />
             Cetak
           </Button>
@@ -806,6 +808,35 @@ const ProduksiNPKPage = ({ plant }: ProduksiNPKPageProps) => {
           editingId ? "Data berhasil diupdate!" : "Data berhasil disimpan!"
         }
         onClose={() => setShowSuccess(false)}
+      />
+
+      {/* Print Modal */}
+      <PrintModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        title={`Produksi NPK Granul ${plant === "NPK1" ? "1" : "2"}`}
+        plant={plant === "NPK1" ? "NPK Plant 1" : "NPK Plant 2"}
+        data={data as unknown as Record<string, unknown>[]}
+        columns={[
+          { key: "tanggal", header: "Tanggal", render: (v) => formatDate(v as string), width: "70px" },
+          { key: "shiftMalamOnspek", header: "M.On", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "45px" },
+          { key: "shiftMalamOffspek", header: "M.Off", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "45px" },
+          { key: "shiftPagiOnspek", header: "P.On", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "45px" },
+          { key: "shiftPagiOffspek", header: "P.Off", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "45px" },
+          { key: "shiftSoreOnspek", header: "S.On", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "45px" },
+          { key: "shiftSoreOffspek", header: "S.Off", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "45px" },
+          { key: "totalOnspek", header: "Tot.On", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "50px" },
+          { key: "totalOffspek", header: "Tot.Off", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "50px" },
+          { key: "total", header: "Total", render: (v) => formatNumber(parseNumber(v)), align: "right", width: "55px" },
+        ]}
+        signatures={[
+          { role: "mengetahui", label: "Mengetahui" },
+        ]}
+        summaryRows={[
+          { label: "Total Onspek:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.totalOnspek), 0)) + " Ton" },
+          { label: "Total Offspek:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.totalOffspek), 0)) + " Ton" },
+          { label: "Grand Total:", getValue: (d) => formatNumber(d.reduce((s, i) => s + parseNumber(i.total), 0)) + " Ton" },
+        ]}
       />
     </div>
   );
