@@ -491,7 +491,9 @@ const PrintModal = ({
               {/* Header */}
               <div className="header">
                 <h1>LAPORAN {title.toUpperCase()}</h1>
-                <div className="periode">PERIODE : {formatPeriode().toUpperCase()}</div>
+                <div className="periode">
+                  PERIODE : {formatPeriode().toUpperCase()}
+                </div>
               </div>
 
               {/* Filter Info */}
@@ -568,7 +570,11 @@ const PrintModal = ({
               <div className="footer">Cikampek, {formatCurrentDate()}</div>
 
               {/* Signatures */}
-              <div className={signatures.length > 1 ? "multi-signatures" : "signatures"}>
+              <div
+                className={
+                  signatures.length > 1 ? "multi-signatures" : "signatures"
+                }
+              >
                 {signatures.map((sig) => (
                   <div key={sig.role} className="signature-box">
                     <div className="label">{sig.label}</div>
