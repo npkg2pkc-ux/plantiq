@@ -415,12 +415,12 @@ const PrintModal = ({
             </div>
           )}
 
-          {/* Signature Fields */}
+          {/* Signature Fields - Horizontal Layout */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold text-dark-700">
               Data Tanda Tangan
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-3">
               {signatures.map((sig) => (
                 <div
                   key={sig.role}
@@ -429,7 +429,7 @@ const PrintModal = ({
                   <h4 className="text-xs font-semibold text-dark-600 mb-2">
                     {sig.label}
                   </h4>
-                  <div className="space-y-2">
+                  <div className="flex flex-wrap gap-3">
                     <input
                       type="text"
                       placeholder="Jabatan"
@@ -437,7 +437,7 @@ const PrintModal = ({
                       onChange={(e) =>
                         updateSignature(sig.role, "jabatan", e.target.value)
                       }
-                      className="w-full px-2 py-1 text-sm border border-dark-200 rounded focus:ring-1 focus:ring-primary-500"
+                      className="flex-1 min-w-[150px] px-2 py-1 text-sm border border-dark-200 rounded focus:ring-1 focus:ring-primary-500"
                     />
                     <input
                       type="text"
@@ -446,7 +446,7 @@ const PrintModal = ({
                       onChange={(e) =>
                         updateSignature(sig.role, "nama", e.target.value)
                       }
-                      className="w-full px-2 py-1 text-sm border border-dark-200 rounded focus:ring-1 focus:ring-primary-500"
+                      className="flex-1 min-w-[150px] px-2 py-1 text-sm border border-dark-200 rounded focus:ring-1 focus:ring-primary-500"
                     />
                     {sig.role !== "operator" && (
                       <input
@@ -456,7 +456,7 @@ const PrintModal = ({
                         onChange={(e) =>
                           updateSignature(sig.role, "noBadge", e.target.value)
                         }
-                        className="w-full px-2 py-1 text-sm border border-dark-200 rounded focus:ring-1 focus:ring-primary-500"
+                        className="flex-1 min-w-[120px] px-2 py-1 text-sm border border-dark-200 rounded focus:ring-1 focus:ring-primary-500"
                       />
                     )}
                   </div>
