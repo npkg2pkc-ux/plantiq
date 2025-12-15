@@ -27,6 +27,7 @@ import {
   Truck,
   Gauge,
   Loader2,
+  CalendarDays,
 } from "lucide-react";
 import {
   Card,
@@ -553,6 +554,91 @@ const DashboardPage = () => {
     return monthlyData;
   }, [filteredData]);
 
+  // Current month production data
+  const currentMonthData = useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    const currentMonthName = MONTH_SHORT[currentMonth];
+    const monthKey = MONTH_KEY[currentMonth];
+    
+    // NPK Production this month
+    const npkThisMonth = filteredData.produksiNPK.filter((item) => {
+      const month = new Date(item.tanggal).getMonth();
+      return month === currentMonth;
+    });
+    
+    const npkProduksi = npkThisMonth.reduce((sum, item) => {
+      return (
+        sum +
+        (parseNumber(item.total) ||
+          parseNumber(item.shiftMalamOnspek) +
+            parseNumber(item.shiftMalamOffspek) +
+            parseNumber(item.shiftPagiOnspek) +
+            parseNumber(item.shiftPagiOffspek) +
+            parseNumber(item.shiftSoreOnspek) +
+            parseNumber(item.shiftSoreOffspek))
+      );
+    }, 0);
+    
+    const npkOnspek = npkThisMonth.reduce((sum, item) => {
+      return (
+        sum +
+        (parseNumber(item.totalOnspek) ||
+          parseNumber(item.shiftMalamOnspek) +
+            parseNumber(item.shiftPagiOnspek) +
+            parseNumber(item.shiftSoreOnspek))
+      );
+    }, 0);
+    
+    const npkOffspek = npkThisMonth.reduce((sum, item) => {
+      return (
+        sum +
+        (parseNumber(item.totalOffspek) ||
+          parseNumber(item.shiftMalamOffspek) +
+            parseNumber(item.shiftPagiOffspek) +
+            parseNumber(item.shiftSoreOffspek))
+      );
+    }, 0);
+    
+    // Blending Production this month
+    const blendingThisMonth = filteredData.produksiBlending.filter((item) => {
+      const month = new Date(item.tanggal).getMonth();
+      return month === currentMonth;
+    });
+    
+    const blendingProduksi = blendingThisMonth.reduce((sum, item) => {
+      return sum + parseNumber(item.tonase);
+    }, 0);
+    
+    // NPK Mini Production this month
+    const npkMiniThisMonth = filteredData.produksiNPKMini.filter((item) => {
+      const month = new Date(item.tanggal).getMonth();
+      return month === currentMonth;
+    });
+    
+    const npkMiniProduksi = npkMiniThisMonth.reduce((sum, item) => {
+      return sum + parseNumber(item.tonase);
+    }, 0);
+    
+    // RKAP for this month
+    const rkapThisMonth = filteredData.rkap.reduce((sum, rkapItem) => {
+      return sum + parseNumber(rkapItem[monthKey as keyof RKAP]);
+    }, 0);
+    
+    const percentageRkap = rkapThisMonth > 0 ? ((npkProduksi / rkapThisMonth) * 100).toFixed(1) : "0";
+    
+    return {
+      monthName: currentMonthName,
+      npkProduksi,
+      npkOnspek,
+      npkOffspek,
+      blendingProduksi,
+      npkMiniProduksi,
+      rkapThisMonth,
+      percentageRkap,
+      totalProduksi: npkProduksi + blendingProduksi + npkMiniProduksi,
+    };
+  }, [filteredData]);
+
   // Downtime by equipment chart data - with period and value filters
   const downtimeChartData = useMemo(() => {
     // Filter by period (bulanan/tahunan)
@@ -721,6 +807,67 @@ const DashboardPage = () => {
           />
         </div>
       </div>
+
+      {/* Produksi Bulan Ini - Highlighted Section */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white shadow-lg"
+      >
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarDays className="h-6 w-6" />
+              <h2 className="text-xl font-bold">Produksi Bulan {currentMonthData.monthName} {dashboardYear}</h2>
+            </div>
+            <p className="text-primary-100 text-sm">
+              Ringkasan produksi {plantLabel.toLowerCase()} bulan ini
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap gap-4 lg:gap-8">
+            <div className="bg-white/20 rounded-xl px-6 py-4 backdrop-blur-sm min-w-[140px]">
+              <p className="text-primary-100 text-xs uppercase tracking-wider mb-1">NPK Produksi</p>
+              <p className="text-2xl lg:text-3xl font-bold">{formatNumber(currentMonthData.npkProduksi)}</p>
+              <p className="text-primary-100 text-xs">Ton</p>
+            </div>
+            
+            <div className="bg-white/20 rounded-xl px-6 py-4 backdrop-blur-sm min-w-[140px]">
+              <p className="text-primary-100 text-xs uppercase tracking-wider mb-1">Target RKAP</p>
+              <p className="text-2xl lg:text-3xl font-bold">{formatNumber(currentMonthData.rkapThisMonth)}</p>
+              <p className="text-primary-100 text-xs">Ton</p>
+            </div>
+            
+            <div className="bg-white/20 rounded-xl px-6 py-4 backdrop-blur-sm min-w-[140px]">
+              <p className="text-primary-100 text-xs uppercase tracking-wider mb-1">Pencapaian</p>
+              <p className="text-2xl lg:text-3xl font-bold">{currentMonthData.percentageRkap}%</p>
+              <p className="text-primary-100 text-xs">
+                {Number(currentMonthData.percentageRkap) >= 100 ? "✓ Target Tercapai" : "dari target"}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Sub-detail row */}
+        <div className="mt-4 pt-4 border-t border-white/20 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p className="text-primary-100 text-xs">Onspek</p>
+            <p className="font-semibold">{formatNumber(currentMonthData.npkOnspek)} Ton</p>
+          </div>
+          <div>
+            <p className="text-primary-100 text-xs">Offspek</p>
+            <p className="font-semibold">{formatNumber(currentMonthData.npkOffspek)} Ton</p>
+          </div>
+          <div>
+            <p className="text-primary-100 text-xs">Blending</p>
+            <p className="font-semibold">{formatNumber(currentMonthData.blendingProduksi)} Ton</p>
+          </div>
+          <div>
+            <p className="text-primary-100 text-xs">NPK Mini</p>
+            <p className="font-semibold">{formatNumber(currentMonthData.npkMiniProduksi)} Ton</p>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Main Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

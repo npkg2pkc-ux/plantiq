@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Printer, Search } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Edit2, Trash2, Printer, Search, CalendarDays } from "lucide-react";
 import {
   Button,
   Card,
@@ -102,6 +102,30 @@ const ProduksiNPKMiniPage = () => {
     };
     fetchData();
   }, []);
+
+  // Calculate current month production
+  const MONTH_NAMES = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const currentMonthProduksi = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const thisMonthData = data.filter((item) => {
+      const itemDate = new Date(item.tanggal);
+      return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+    });
+    
+    const total = thisMonthData.reduce((sum, item) => sum + parseNumber(item.tonase || item.total), 0);
+    const formulasiCount = new Set(thisMonthData.map(i => i.formulasi)).size;
+    
+    return {
+      monthName: MONTH_NAMES[currentMonth],
+      year: currentYear,
+      total,
+      formulasiCount,
+      entryCount: thisMonthData.length,
+    };
+  }, [data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -322,6 +346,30 @@ const ProduksiNPKMiniPage = () => {
               Tambah Data
             </Button>
           )}
+        </div>
+      </div>
+
+      {/* Produksi Bulan Ini */}
+      <div className="rounded-xl p-5 text-white shadow-md bg-gradient-to-r from-green-500 to-green-600">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <CalendarDays className="h-8 w-8" />
+            <div>
+              <h3 className="text-lg font-bold">Produksi Bulan {currentMonthProduksi.monthName} {currentMonthProduksi.year}</h3>
+              <p className="text-white/80 text-sm">{currentMonthProduksi.entryCount} entry data</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-4 md:gap-6">
+            <div className="bg-white/20 rounded-lg px-4 py-2 backdrop-blur-sm">
+              <p className="text-white/80 text-xs uppercase">Total</p>
+              <p className="text-xl font-bold">{formatNumber(currentMonthProduksi.total)} <span className="text-sm font-normal">Ton</span></p>
+            </div>
+            <div className="bg-white/20 rounded-lg px-4 py-2 backdrop-blur-sm">
+              <p className="text-white/80 text-xs uppercase">Formulasi</p>
+              <p className="text-xl font-bold">{currentMonthProduksi.formulasiCount} <span className="text-sm font-normal">Jenis</span></p>
+            </div>
+          </div>
         </div>
       </div>
 
