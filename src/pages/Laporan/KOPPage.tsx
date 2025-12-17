@@ -148,25 +148,25 @@ const TARGETS = {
 
 /**
  * Menghitung Flow Steam per shift
- * Formula: steam = akhir - awal, flowSteam (M3/H) = steam / 8
+ * Formula: steam = akhir - awal, flowSteam (M3/H) = steam / 8 / 1000
  */
 const calculateSteamFlow = (input: ShiftEnergyInput): ShiftEnergyCalculated => {
   const awal = parseNumber(input.awal || "0");
   const akhir = parseNumber(input.akhir || "0");
   const selisih = akhir - awal;
-  const flowPerHour = selisih / 8; // 8 jam per shift
+  const flowPerHour = selisih / 8 / 1000; // 8 jam per shift, dibagi 1000
   return { selisih, flowPerHour, costRp: 0 };
 };
 
 /**
  * Menghitung Flow Gas per shift
- * Formula: gas = akhir - awal, flowGas (Nm3/H) = gas / 8
+ * Formula: gas = akhir - awal, flowGas (Nm3/H) = gas / 8 / 1000
  */
 const calculateGasFlow = (input: ShiftEnergyInput): ShiftEnergyCalculated => {
   const awal = parseNumber(input.awal || "0");
   const akhir = parseNumber(input.akhir || "0");
   const selisih = akhir - awal;
-  const flowPerHour = selisih / 8; // 8 jam per shift
+  const flowPerHour = selisih / 8 / 1000; // 8 jam per shift, dibagi 1000
   return { selisih, flowPerHour, costRp: 0 };
 };
 
@@ -564,7 +564,11 @@ const KOPPage = ({ plant }: KOPPageProps) => {
   };
 
   const openAddForm = () => {
-    setForm(initialFormState);
+    setForm({
+      ...initialFormState,
+      tanggal: getCurrentDate(),
+      produkTimbangan: autoFillTimbangan(),
+    });
     setEditingId(null);
     setShowForm(true);
   };
