@@ -567,6 +567,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
     setForm({
       ...initialFormState,
       tanggal: getCurrentDate(),
+      dryerTempProdukOut: autoFillTempProdukOut(),
       produkTimbangan: autoFillTimbangan(),
     });
     setEditingId(null);
@@ -1010,8 +1011,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
       </div>
       <div>
         <Input
-          type="number"
-          step="0.01"
+          type="text"
           placeholder="Malam"
           value={value.malam}
           onChange={(e) => onChange({ ...value, malam: e.target.value })}
@@ -1020,8 +1020,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
       </div>
       <div>
         <Input
-          type="number"
-          step="0.01"
+          type="text"
           placeholder="Pagi"
           value={value.pagi}
           onChange={(e) => onChange({ ...value, pagi: e.target.value })}
@@ -1030,8 +1029,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
       </div>
       <div>
         <Input
-          type="number"
-          step="0.01"
+          type="text"
           placeholder="Sore"
           value={value.sore}
           onChange={(e) => onChange({ ...value, sore: e.target.value })}
@@ -1408,7 +1406,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
             <div className="mb-4 p-3 bg-amber-50 rounded-lg">
               <Input
                 label="Kurs Dollar (Rp)"
-                type="number"
+                type="text"
                 value={form.kursDollar}
                 onChange={(e) =>
                   setForm({ ...form, kursDollar: e.target.value })
@@ -1429,8 +1427,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                 <div className="space-y-3">
                   <Input
                     label="Awal Shift (M3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.steamMalam?.awal || ""}
                     onChange={(e) =>
                       setForm({
@@ -1444,8 +1441,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                   />
                   <Input
                     label="Akhir Shift (M3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.steamMalam?.akhir || ""}
                     onChange={(e) =>
                       setForm({
@@ -1488,8 +1484,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                 <div className="space-y-3">
                   <Input
                     label="Awal Shift (M3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.steamPagi?.awal || ""}
                     onChange={(e) =>
                       setForm({
@@ -1501,8 +1496,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                   />
                   <Input
                     label="Akhir Shift (M3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.steamPagi?.akhir || ""}
                     onChange={(e) =>
                       setForm({
@@ -1542,8 +1536,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                 <div className="space-y-3">
                   <Input
                     label="Awal Shift (M3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.steamSore?.awal || ""}
                     onChange={(e) =>
                       setForm({
@@ -1555,8 +1548,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                   />
                   <Input
                     label="Akhir Shift (M3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.steamSore?.akhir || ""}
                     onChange={(e) =>
                       setForm({
@@ -1620,8 +1612,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                 <div className="space-y-3">
                   <Input
                     label="Awal Shift (Nm3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.gasMalam?.awal || ""}
                     onChange={(e) =>
                       setForm({
@@ -1632,8 +1623,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                   />
                   <Input
                     label="Akhir Shift (Nm3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.gasMalam?.akhir || ""}
                     onChange={(e) =>
                       setForm({
@@ -1673,8 +1663,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                 <div className="space-y-3">
                   <Input
                     label="Awal Shift (Nm3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.gasPagi?.awal || ""}
                     onChange={(e) =>
                       setForm({
@@ -1686,8 +1675,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                   />
                   <Input
                     label="Akhir Shift (Nm3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.gasPagi?.akhir || ""}
                     onChange={(e) =>
                       setForm({
@@ -1727,8 +1715,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                 <div className="space-y-3">
                   <Input
                     label="Awal Shift (Nm3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.gasSore?.awal || ""}
                     onChange={(e) =>
                       setForm({
@@ -1740,8 +1727,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
                   />
                   <Input
                     label="Akhir Shift (Nm3)"
-                    type="number"
-                    step="0.01"
+                    type="text"
                     value={form.gasSore?.akhir || ""}
                     onChange={(e) =>
                       setForm({
