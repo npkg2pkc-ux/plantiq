@@ -1208,7 +1208,7 @@ const KOPPage = ({ plant }: KOPPageProps) => {
       <body>
         <div class="header">
           <h1>LAPORAN KEY OPERATING PARAMETER (KOP)</h1>
-          <h2>PT PUPUK KALIMANTAN TIMUR - Pabrik NPK Granular ${
+          <h2>PT PUPUK KUJANG CIKAMPEK - Pabrik NPK Granular ${
             plant === "NPK1" ? "1" : "2"
           }</h2>
         </div>
