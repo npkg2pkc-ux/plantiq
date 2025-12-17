@@ -205,14 +205,14 @@ const PrintModal = ({
             font-size: ${compactMode ? "7pt" : "9pt"};
           }
           th, td {
-            border: 1.5px solid #8B4513;
+            border: 1.5px solid #000;
             padding: ${compactMode ? "2px 3px" : "5px 6px"};
             text-align: center;
           }
           thead tr:first-child th {
             background-color: transparent;
             font-weight: bold;
-            border: 1.5px solid #8B4513;
+            border: 1.5px solid #000;
           }
           thead tr:nth-child(2) th {
             background-color: transparent;
@@ -231,7 +231,7 @@ const PrintModal = ({
           }
           .summary-row td {
             font-weight: bold;
-            border: 1.5px solid #8B4513;
+            border: 1.5px solid #000;
           }
           .subtotal-label {
             text-align: center;
@@ -241,7 +241,7 @@ const PrintModal = ({
             margin-top: ${compactMode ? "10px" : "20px"};
             text-align: right;
             font-size: ${compactMode ? "8pt" : "10pt"};
-            color: #8B4513;
+            color: #000;
             font-style: italic;
           }
           .signatures {
@@ -261,19 +261,20 @@ const PrintModal = ({
           .signature-box .position {
             font-size: ${compactMode ? "8pt" : "10pt"};
             font-weight: bold;
-            color: #8B4513;
+            color: #000;
             margin-bottom: ${compactMode ? "40px" : "60px"};
           }
           .signature-box .name {
             font-size: ${compactMode ? "8pt" : "10pt"};
             font-weight: bold;
-            color: #8B4513;
+            color: #000;
             text-decoration: underline;
             margin-bottom: 2px;
           }
           .signature-box .badge {
             font-size: ${compactMode ? "8pt" : "10pt"};
-            color: #8B4513;
+            font-weight: bold;
+            color: #000;
           }
           .multi-signatures {
             display: flex;

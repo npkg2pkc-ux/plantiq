@@ -18,7 +18,12 @@ export function useKeyboardShortcut(
   callback: () => void,
   options: UseKeyboardShortcutOptions = {}
 ) {
-  const { altKey = false, ctrlKey = false, shiftKey = false, enabled = true } = options;
+  const {
+    altKey = false,
+    ctrlKey = false,
+    shiftKey = false,
+    enabled = true,
+  } = options;
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {

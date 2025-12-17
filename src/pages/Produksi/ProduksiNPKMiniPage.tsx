@@ -74,7 +74,7 @@ const ProduksiNPKMiniPage = () => {
   // Alt+S shortcut to save
   const triggerSave = useCallback(() => {
     if (showForm && !loading) {
-      const form = document.querySelector('form');
+      const form = document.querySelector("form");
       if (form) form.requestSubmit();
     }
   }, [showForm, loading]);
