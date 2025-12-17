@@ -230,13 +230,13 @@ const calculateSteamFlow = (input: ShiftEnergyInput): ShiftEnergyCalculated => {
 
 /**
  * Menghitung Flow Gas per shift
- * Formula: gas = akhir - awal, flowGas (Nm3/H) = gas / 8 / 1000
+ * Formula: gas = akhir - awal, flowGas (Nm3/H) = gas / 8
  */
 const calculateGasFlow = (input: ShiftEnergyInput): ShiftEnergyCalculated => {
   const awal = parseNumber(input.awal || "0");
   const akhir = parseNumber(input.akhir || "0");
   const selisih = akhir - awal;
-  const flowPerHour = selisih / 8 / 1000; // 8 jam per shift, dibagi 1000
+  const flowPerHour = selisih / 8; // 8 jam per shift (tidak dibagi 1000)
   return { selisih, flowPerHour, costRp: 0 };
 };
 
@@ -374,6 +374,10 @@ const KOPPage = ({ plant }: KOPPageProps) => {
   const [form, setForm] = useState<KOPEntry>(initialFormState);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
+
+  // Print report states
+  const [showPrintReportModal, setShowPrintReportModal] = useState(false);
+  const [printReportDate, setPrintReportDate] = useState("");
 
   // Approval states
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
@@ -1116,6 +1120,387 @@ const KOPPage = ({ plant }: KOPPageProps) => {
     setShowPrintPreview(false);
   };
 
+  // Execute print report by date
+  const executePrintReport = () => {
+    if (!printReportDate) {
+      alert("Pilih tanggal terlebih dahulu");
+      return;
+    }
+
+    const reportItem = data.find((item) => item.tanggal === printReportDate);
+    if (!reportItem) {
+      alert("Data tidak ditemukan untuk tanggal tersebut");
+      return;
+    }
+
+    const kursDollar = parseNumber(reportItem.kursDollar || "16000");
+
+    // Steam calculations
+    const steamMalamCalc = calculateSteamFlow(
+      reportItem.steamMalam || emptyShiftEnergy
+    );
+    const steamPagiCalc = calculateSteamFlow(
+      reportItem.steamPagi || emptyShiftEnergy
+    );
+    const steamSoreCalc = calculateSteamFlow(
+      reportItem.steamSore || emptyShiftEnergy
+    );
+    steamMalamCalc.costRp = calculateSteamCost(steamMalamCalc.selisih);
+    steamPagiCalc.costRp = calculateSteamCost(steamPagiCalc.selisih);
+    steamSoreCalc.costRp = calculateSteamCost(steamSoreCalc.selisih);
+
+    // Gas calculations
+    const gasMalamCalc = calculateGasFlow(
+      reportItem.gasMalam || emptyShiftEnergy
+    );
+    const gasPagiCalc = calculateGasFlow(
+      reportItem.gasPagi || emptyShiftEnergy
+    );
+    const gasSoreCalc = calculateGasFlow(
+      reportItem.gasSore || emptyShiftEnergy
+    );
+    gasMalamCalc.costRp = calculateGasCost(gasMalamCalc.selisih, kursDollar);
+    gasPagiCalc.costRp = calculateGasCost(gasPagiCalc.selisih, kursDollar);
+    gasSoreCalc.costRp = calculateGasCost(gasSoreCalc.selisih, kursDollar);
+
+    const totalSteamRp =
+      steamMalamCalc.costRp + steamPagiCalc.costRp + steamSoreCalc.costRp;
+    const totalGasRp =
+      gasMalamCalc.costRp + gasPagiCalc.costRp + gasSoreCalc.costRp;
+
+    // Calculate total tonase
+    const totalTonase =
+      parseNumber(reportItem.produkTonase?.malam || "0") +
+      parseNumber(reportItem.produkTonase?.pagi || "0") +
+      parseNumber(reportItem.produkTonase?.sore || "0");
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Laporan KOP - ${formatDate(reportItem.tanggal)}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; font-size: 10px; padding: 15px; }
+          .header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+          .header h1 { font-size: 16px; margin-bottom: 5px; }
+          .header h2 { font-size: 12px; font-weight: normal; }
+          .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 11px; }
+          .section { margin-bottom: 15px; }
+          .section-title { background: #f0f0f0; padding: 5px 10px; font-weight: bold; font-size: 11px; margin-bottom: 5px; }
+          table { width: 100%; border-collapse: collapse; font-size: 10px; }
+          th, td { border: 1px solid #333; padding: 4px 6px; text-align: center; }
+          th { background: #e0e0e0; font-weight: bold; }
+          .text-left { text-align: left; }
+          .text-right { text-align: right; }
+          .highlight { background: #fffde7; }
+          .total-row { background: #e3f2fd; font-weight: bold; }
+          .cost { color: #2e7d32; }
+          .footer { margin-top: 20px; display: flex; justify-content: space-between; }
+          .signature { width: 30%; text-align: center; }
+          .signature-line { border-top: 1px solid #000; margin-top: 50px; padding-top: 5px; }
+          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>LAPORAN KEY OPERATING PARAMETER (KOP)</h1>
+          <h2>PT PUPUK KALIMANTAN TIMUR - Pabrik NPK Granular ${
+            plant === "NPK1" ? "1" : "2"
+          }</h2>
+        </div>
+
+        <div class="info-row">
+          <div><strong>Tanggal:</strong> ${formatDate(reportItem.tanggal)}</div>
+          <div><strong>Jenis Operasi:</strong> ${reportItem.jenisOperasi}</div>
+          <div><strong>Kurs Dollar:</strong> Rp ${formatNumber(
+            kursDollar
+          )}</div>
+        </div>
+
+        <!-- Personel Section -->
+        <div class="section">
+          <div class="section-title">PERSONEL</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Shift</th>
+                <th>Section Head</th>
+                <th>Operator Panel</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Malam (23:00 - 07:00)</td>
+                <td>${reportItem.shiftMalam?.sectionHead || "-"}</td>
+                <td>${reportItem.shiftMalam?.operatorPanel || "-"}</td>
+              </tr>
+              <tr>
+                <td>Pagi (07:00 - 15:00)</td>
+                <td>${reportItem.shiftPagi?.sectionHead || "-"}</td>
+                <td>${reportItem.shiftPagi?.operatorPanel || "-"}</td>
+              </tr>
+              <tr>
+                <td>Sore (15:00 - 23:00)</td>
+                <td>${reportItem.shiftSore?.sectionHead || "-"}</td>
+                <td>${reportItem.shiftSore?.operatorPanel || "-"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Konsumsi Energi Section -->
+        <div class="section">
+          <div class="section-title">KONSUMSI ENERGI</div>
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">Parameter</th>
+                <th colspan="3">Shift Malam</th>
+                <th colspan="3">Shift Pagi</th>
+                <th colspan="3">Shift Sore</th>
+                <th rowspan="2">Total Biaya (Rp)</th>
+              </tr>
+              <tr>
+                <th>Awal</th>
+                <th>Akhir</th>
+                <th>Flow</th>
+                <th>Awal</th>
+                <th>Akhir</th>
+                <th>Flow</th>
+                <th>Awal</th>
+                <th>Akhir</th>
+                <th>Flow</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-left"><strong>Steam (M3)</strong></td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.steamMalam?.awal || "0")
+                )}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.steamMalam?.akhir || "0")
+                )}</td>
+                <td>${steamMalamCalc.flowPerHour.toFixed(2)}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.steamPagi?.awal || "0")
+                )}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.steamPagi?.akhir || "0")
+                )}</td>
+                <td>${steamPagiCalc.flowPerHour.toFixed(2)}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.steamSore?.awal || "0")
+                )}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.steamSore?.akhir || "0")
+                )}</td>
+                <td>${steamSoreCalc.flowPerHour.toFixed(2)}</td>
+                <td class="cost">Rp ${formatNumber(totalSteamRp)}</td>
+              </tr>
+              <tr>
+                <td class="text-left"><strong>Gas (Nm3)</strong></td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.gasMalam?.awal || "0")
+                )}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.gasMalam?.akhir || "0")
+                )}</td>
+                <td>${gasMalamCalc.flowPerHour.toFixed(2)}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.gasPagi?.awal || "0")
+                )}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.gasPagi?.akhir || "0")
+                )}</td>
+                <td>${gasPagiCalc.flowPerHour.toFixed(2)}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.gasSore?.awal || "0")
+                )}</td>
+                <td>${formatNumber(
+                  parseNumber(reportItem.gasSore?.akhir || "0")
+                )}</td>
+                <td>${gasSoreCalc.flowPerHour.toFixed(2)}</td>
+                <td class="cost">Rp ${formatNumber(totalGasRp)}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="10" class="text-right">Total Biaya Energi:</td>
+                <td class="cost">Rp ${formatNumber(
+                  totalSteamRp + totalGasRp
+                )}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Parameter Operasi Section -->
+        <div class="section">
+          <div class="section-title">PARAMETER OPERASI</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Target</th>
+                <th>Malam</th>
+                <th>Pagi</th>
+                <th>Sore</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-left">Temperatur Produk Out (°C)</td>
+                <td>55 - 70</td>
+                <td>${reportItem.dryerTempProdukOut?.malam || "-"}</td>
+                <td>${reportItem.dryerTempProdukOut?.pagi || "-"}</td>
+                <td>${reportItem.dryerTempProdukOut?.sore || "-"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Produk NPK Section -->
+        <div class="section">
+          <div class="section-title">PRODUK NPK (15-10-12)</div>
+          <table>
+            <thead>
+              <tr>
+                <th>Parameter</th>
+                <th>Target</th>
+                <th>Malam</th>
+                <th>Pagi</th>
+                <th>Sore</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-left">N (%)</td>
+                <td>13.8 - 16.2</td>
+                <td>${reportItem.produkN?.malam || "-"}</td>
+                <td>${reportItem.produkN?.pagi || "-"}</td>
+                <td>${reportItem.produkN?.sore || "-"}</td>
+              </tr>
+              <tr>
+                <td class="text-left">P (%)</td>
+                <td>13.8 - 16.2</td>
+                <td>${reportItem.produkP?.malam || "-"}</td>
+                <td>${reportItem.produkP?.pagi || "-"}</td>
+                <td>${reportItem.produkP?.sore || "-"}</td>
+              </tr>
+              <tr>
+                <td class="text-left">K (%)</td>
+                <td>13.8 - 16.2</td>
+                <td>${reportItem.produkK?.malam || "-"}</td>
+                <td>${reportItem.produkK?.pagi || "-"}</td>
+                <td>${reportItem.produkK?.sore || "-"}</td>
+              </tr>
+              <tr>
+                <td class="text-left">Moisture (%)</td>
+                <td>Maks. 3</td>
+                <td>${reportItem.produkMoisture?.malam || "-"}</td>
+                <td>${reportItem.produkMoisture?.pagi || "-"}</td>
+                <td>${reportItem.produkMoisture?.sore || "-"}</td>
+              </tr>
+              <tr>
+                <td class="text-left">Kekerasan (Kgf)</td>
+                <td>Min. 1</td>
+                <td>${reportItem.produkKekerasan?.malam || "-"}</td>
+                <td>${reportItem.produkKekerasan?.pagi || "-"}</td>
+                <td>${reportItem.produkKekerasan?.sore || "-"}</td>
+              </tr>
+              <tr>
+                <td class="text-left">Timbangan (Kg/Karung)</td>
+                <td>50.00 - 50.3</td>
+                <td>${reportItem.produkTimbangan?.malam || "-"}</td>
+                <td>${reportItem.produkTimbangan?.pagi || "-"}</td>
+                <td>${reportItem.produkTimbangan?.sore || "-"}</td>
+              </tr>
+              <tr class="highlight">
+                <td class="text-left"><strong>Tonase (Ton/Shift)</strong></td>
+                <td>Min 110</td>
+                <td><strong>${
+                  reportItem.produkTonase?.malam || "-"
+                }</strong></td>
+                <td><strong>${
+                  reportItem.produkTonase?.pagi || "-"
+                }</strong></td>
+                <td><strong>${
+                  reportItem.produkTonase?.sore || "-"
+                }</strong></td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="2" class="text-right"><strong>Total Tonase:</strong></td>
+                <td colspan="3"><strong>${formatNumber(
+                  totalTonase
+                )} Ton</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Summary Section -->
+        <div class="section">
+          <div class="section-title">RINGKASAN</div>
+          <table>
+            <tbody>
+              <tr>
+                <td class="text-left" style="width: 40%"><strong>Total Produksi</strong></td>
+                <td><strong>${formatNumber(totalTonase)} Ton</strong></td>
+              </tr>
+              <tr>
+                <td class="text-left"><strong>Total Biaya Steam</strong></td>
+                <td class="cost">Rp ${formatNumber(totalSteamRp)}</td>
+              </tr>
+              <tr>
+                <td class="text-left"><strong>Total Biaya Gas</strong></td>
+                <td class="cost">Rp ${formatNumber(totalGasRp)}</td>
+              </tr>
+              <tr class="total-row">
+                <td class="text-left"><strong>Total Biaya Energi</strong></td>
+                <td class="cost"><strong>Rp ${formatNumber(
+                  totalSteamRp + totalGasRp
+                )}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Footer Signatures -->
+        <div class="footer">
+          <div class="signature">
+            <div>Dibuat oleh:</div>
+            <div class="signature-line">Operator</div>
+          </div>
+          <div class="signature">
+            <div>Diperiksa oleh:</div>
+            <div class="signature-line">Section Head</div>
+          </div>
+          <div class="signature">
+            <div>Disetujui oleh:</div>
+            <div class="signature-line">Manager</div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; font-size: 9px; color: #666;">
+          Dicetak pada: ${new Date().toLocaleString("id-ID")}
+        </div>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+    setShowPrintReportModal(false);
+    setPrintReportDate("");
+  };
+
   // Filtered data
   const filteredData = data.filter((item) => {
     const matchesSearch =
@@ -1144,12 +1529,22 @@ const KOPPage = ({ plant }: KOPPageProps) => {
             Pabrik NPK Granular {plant === "NPK1" ? "1" : "2"}
           </p>
         </div>
-        {!userIsViewOnly && userCanAdd && (
-          <Button onClick={openAddForm} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Tambah KOP
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            onClick={() => setShowPrintReportModal(true)}
+            className="gap-2"
+          >
+            <Printer className="h-4 w-4" />
+            Print Laporan
           </Button>
-        )}
+          {!userIsViewOnly && userCanAdd && (
+            <Button onClick={openAddForm} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Tambah KOP
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -2076,6 +2471,72 @@ const KOPPage = ({ plant }: KOPPageProps) => {
             <Button onClick={executePrint} className="gap-2">
               <Printer className="h-4 w-4" />
               Cetak Sekarang
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Print Report Modal */}
+      <Modal
+        isOpen={showPrintReportModal}
+        onClose={() => {
+          setShowPrintReportModal(false);
+          setPrintReportDate("");
+        }}
+        title="Print Laporan KOP"
+      >
+        <div className="space-y-4">
+          <p className="text-dark-600">
+            Pilih tanggal untuk mencetak laporan KOP lengkap
+          </p>
+          <div>
+            <label className="block text-sm font-medium text-dark-700 mb-1">
+              Tanggal
+            </label>
+            <select
+              value={printReportDate}
+              onChange={(e) => setPrintReportDate(e.target.value)}
+              className="w-full px-3 py-2 border border-dark-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              <option value="">-- Pilih Tanggal --</option>
+              {data
+                .sort(
+                  (a, b) =>
+                    new Date(b.tanggal).getTime() -
+                    new Date(a.tanggal).getTime()
+                )
+                .map((item) => (
+                  <option key={item.id} value={item.tanggal}>
+                    {formatDate(item.tanggal)} - {item.jenisOperasi}
+                  </option>
+                ))}
+            </select>
+          </div>
+          {printReportDate && (
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Preview:</strong> Laporan akan dicetak untuk tanggal{" "}
+                <strong>{formatDate(printReportDate)}</strong>
+              </p>
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowPrintReportModal(false);
+                setPrintReportDate("");
+              }}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={executePrintReport}
+              disabled={!printReportDate}
+              className="gap-2"
+            >
+              <Printer className="h-4 w-4" />
+              Cetak Laporan
             </Button>
           </div>
         </div>
