@@ -157,9 +157,12 @@ const TimesheetForkliftPage = ({ plant }: TimesheetForkliftPageProps) => {
         await import("@/services/api");
       const sheetName = getSheetNameByPlant(SHEETS.TIMESHEET_FORKLIFT, plant);
 
-      // Jika pilih ALL, buat entry untuk semua forklift
+      // Jika pilih ALL, buat entry untuk semua forklift berdasarkan plant
       if (form.forklift === "ALL" && !editingId) {
-        const forklifts = ["F19", "F20", "F21", "F22", "F23"];
+        const forklifts =
+          plant === "NPK1"
+            ? ["F15", "F16", "F17", "F18"]
+            : ["F19", "F20", "F21", "F22", "F23"];
         for (const fl of forklifts) {
           const newData = { ...form, forklift: fl, _plant: plant };
           await createData<TimesheetForklift>(sheetName, newData);
