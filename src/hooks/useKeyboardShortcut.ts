@@ -54,10 +54,10 @@ export function useKeyboardShortcut(
 }
 
 /**
- * Hook specifically for Alt+S save shortcut
- * @param onSave - Function to call when Alt+S is pressed
+ * Hook specifically for Ctrl+S save shortcut
+ * @param onSave - Function to call when Ctrl+S is pressed
  * @param enabled - Whether the shortcut is active (default: true)
  */
 export function useSaveShortcut(onSave: () => void, enabled: boolean = true) {
-  useKeyboardShortcut("s", onSave, { altKey: true, enabled });
+  useKeyboardShortcut("s", onSave, { ctrlKey: true, enabled });
 }
