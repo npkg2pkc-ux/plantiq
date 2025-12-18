@@ -7,9 +7,24 @@
  * 1. Buka Google Sheets baru
  * 2. Buka Extensions > Apps Script
  * 3. Copy semua code ini ke editor
- * 4. Deploy > New deployment > Web app
- * 5. Execute as: Me, Who has access: Anyone
- * 6. Copy URL deployment dan paste ke VITE_API_URL di .env
+ * 4. PENTING: Klik "Project Settings" (gear icon)
+ * 5. Centang "Show appsscript.json manifest file in editor"
+ * 6. Buka file appsscript.json dan ganti dengan:
+ *    {
+ *      "timeZone": "Asia/Jakarta",
+ *      "dependencies": {},
+ *      "exceptionLogging": "STACKDRIVER",
+ *      "runtimeVersion": "V8",
+ *      "oauthScopes": [
+ *        "https://www.googleapis.com/auth/spreadsheets",
+ *        "https://www.googleapis.com/auth/drive",
+ *        "https://www.googleapis.com/auth/script.external_request"
+ *      ]
+ *    }
+ * 7. Jalankan fungsi "authorizeScript" dari menu untuk meminta izin
+ * 8. Deploy > New deployment > Web app
+ * 9. Execute as: Me, Who has access: Anyone
+ * 10. Copy URL deployment dan paste ke VITE_API_URL di .env
  *
  * STRUKTUR SHEETS YANG DIBUTUHKAN:
  * - users
@@ -26,6 +41,7 @@
  * - gatepass, gatepass_NPK1
  * - perta, perta_NPK1
  * - trouble_record, trouble_record_NPK1
+ * - dokumentasi_foto, dokumentasi_foto_NPK1
  * - kop, kop_NPK1
  * - akun
  * - rkap
@@ -34,6 +50,33 @@
  * - notifications
  * - chat_messages
  */
+
+// ============================================
+// AUTHORIZATION - JALANKAN INI PERTAMA KALI
+// ============================================
+
+/**
+ * Fungsi untuk memicu otorisasi Drive dan Spreadsheet
+ * JALANKAN FUNGSI INI PERTAMA KALI dari editor Apps Script!
+ * Klik Run > authorizeScript
+ */
+function authorizeScript() {
+  // Trigger Spreadsheet authorization
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log("Spreadsheet ID: " + ss.getId());
+  
+  // Trigger Drive authorization  
+  const rootFolder = DriveApp.getRootFolder();
+  Logger.log("Drive Root Folder: " + rootFolder.getName());
+  
+  // Test create folder
+  const testFolder = getOrCreateFolder("Dokumentasi Foto", rootFolder);
+  Logger.log("Test Folder Created: " + testFolder.getName());
+  Logger.log("Folder URL: " + testFolder.getUrl());
+  
+  Logger.log("=== OTORISASI BERHASIL! ===");
+  Logger.log("Sekarang Anda bisa deploy ulang web app.");
+}
 
 // ============================================
 // KONFIGURASI
