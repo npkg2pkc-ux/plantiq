@@ -158,6 +158,7 @@ Setelah menjalankan `createDefaultAdmin`:
 ### Error: "Anda tidak memiliki izin untuk memanggil DriveApp"
 
 **Solusi:**
+
 1. Pastikan sudah menambahkan OAuth scope di `appsscript.json`
 2. Jalankan fungsi `authorizeScript` dan berikan izin
 3. Deploy ulang web app (buat version baru)

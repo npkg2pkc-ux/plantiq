@@ -279,3 +279,22 @@ export async function deletePhoto(data: {
     data,
   });
 }
+
+// ============================================
+// EXCHANGE RATE API
+// ============================================
+
+export interface ExchangeRateData {
+  rate: number;
+  currency: string;
+  base: string;
+  timestamp: string;
+  formatted: string;
+}
+
+// Get real-time USD to IDR exchange rate
+export async function getExchangeRate(): Promise<
+  ApiResponse<ExchangeRateData>
+> {
+  return fetchGET<ExchangeRateData>(`?action=getExchangeRate`);
+}

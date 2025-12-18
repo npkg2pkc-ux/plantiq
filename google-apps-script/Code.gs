@@ -64,16 +64,16 @@ function authorizeScript() {
   // Trigger Spreadsheet authorization
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   Logger.log("Spreadsheet ID: " + ss.getId());
-  
-  // Trigger Drive authorization  
+
+  // Trigger Drive authorization
   const rootFolder = DriveApp.getRootFolder();
   Logger.log("Drive Root Folder: " + rootFolder.getName());
-  
+
   // Test create folder
   const testFolder = getOrCreateFolder("Dokumentasi Foto", rootFolder);
   Logger.log("Test Folder Created: " + testFolder.getName());
   Logger.log("Folder URL: " + testFolder.getUrl());
-  
+
   Logger.log("=== OTORISASI BERHASIL! ===");
   Logger.log("Sekarang Anda bisa deploy ulang web app.");
 }
@@ -371,6 +371,9 @@ function handleRequest(e) {
           break;
         case "checkSession":
           result = checkSession(e.parameter.sessionId);
+          break;
+        case "getExchangeRate":
+          result = getExchangeRate();
           break;
         default:
           result = { success: false, error: "Unknown action" };
@@ -908,6 +911,148 @@ function getOrCreateFolder(folderName, parentFolder) {
   } else {
     return parentFolder.createFolder(folderName);
   }
+}
+
+// ============================================
+// EXCHANGE RATE FUNCTIONS
+// ============================================
+
+/**
+ * Get real-time USD to IDR exchange rate
+ * Uses multiple free APIs as fallback
+ */
+function getExchangeRate() {
+  try {
+    // Try primary API: Exchange Rate API (free tier)
+    let rate = getExchangeRateFromAPI1();
+
+    if (!rate) {
+      // Fallback to secondary API
+      rate = getExchangeRateFromAPI2();
+    }
+
+    if (!rate) {
+      // Fallback to tertiary API
+      rate = getExchangeRateFromAPI3();
+    }
+
+    if (rate) {
+      return {
+        success: true,
+        data: {
+          rate: rate,
+          currency: "IDR",
+          base: "USD",
+          timestamp: new Date().toISOString(),
+          formatted: formatCurrency(rate),
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: "Tidak dapat mengambil kurs dollar. Silakan masukkan manual.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: `Error: ${error.toString()}`,
+    };
+  }
+}
+
+/**
+ * Primary API: ExchangeRate-API (free tier - 1500 requests/month)
+ */
+function getExchangeRateFromAPI1() {
+  try {
+    const url = "https://api.exchangerate-api.com/v4/latest/USD";
+    const response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (response.getResponseCode() === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data && data.rates && data.rates.IDR) {
+        return Math.round(data.rates.IDR);
+      }
+    }
+    return null;
+  } catch (error) {
+    Logger.log("API1 Error: " + error.toString());
+    return null;
+  }
+}
+
+/**
+ * Secondary API: Fawaz Ahmed's Currency API (free, no key required)
+ */
+function getExchangeRateFromAPI2() {
+  try {
+    const url =
+      "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
+    const response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (response.getResponseCode() === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data && data.usd && data.usd.idr) {
+        return Math.round(data.usd.idr);
+      }
+    }
+    return null;
+  } catch (error) {
+    Logger.log("API2 Error: " + error.toString());
+    return null;
+  }
+}
+
+/**
+ * Tertiary API: Open Exchange Rates alternative
+ */
+function getExchangeRateFromAPI3() {
+  try {
+    const url = "https://open.er-api.com/v6/latest/USD";
+    const response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (response.getResponseCode() === 200) {
+      const data = JSON.parse(response.getContentText());
+      if (data && data.rates && data.rates.IDR) {
+        return Math.round(data.rates.IDR);
+      }
+    }
+    return null;
+  } catch (error) {
+    Logger.log("API3 Error: " + error.toString());
+    return null;
+  }
+}
+
+/**
+ * Format currency to Indonesian Rupiah format
+ */
+function formatCurrency(amount) {
+  return "Rp " + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+/**
+ * Test function for exchange rate
+ */
+function testExchangeRate() {
+  const result = getExchangeRate();
+  Logger.log(JSON.stringify(result, null, 2));
 }
 
 // ============================================

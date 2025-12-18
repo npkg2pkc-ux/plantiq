@@ -12,6 +12,8 @@ import {
   Users,
   FileText,
   Calendar,
+  RefreshCw,
+  DollarSign,
 } from "lucide-react";
 import { useSaveShortcut } from "@/hooks";
 import {
@@ -401,12 +403,47 @@ const KOPPage = ({ plant }: KOPPageProps) => {
     totalGasRp: 0,
   });
 
+  // Exchange rate state
+  const [loadingExchangeRate, setLoadingExchangeRate] = useState(false);
+  const [exchangeRateInfo, setExchangeRateInfo] = useState<string>("");
+
   // Permission checks
   const userRole = user?.role || "";
   const userCanAdd = canAdd(userRole);
   const userNeedsApprovalEdit = needsApprovalForEdit(userRole);
   const userNeedsApprovalDelete = needsApprovalForDelete(userRole);
   const userIsViewOnly = isViewOnly(userRole);
+
+  // Fetch exchange rate function
+  const fetchExchangeRate = useCallback(async () => {
+    setLoadingExchangeRate(true);
+    setExchangeRateInfo("");
+    try {
+      const { getExchangeRate } = await import("@/services/api");
+      const result = await getExchangeRate();
+      if (result.success && result.data) {
+        setForm((prev) => ({
+          ...prev,
+          kursDollar: result.data!.rate.toString(),
+        }));
+        setExchangeRateInfo(`✓ Kurs diupdate: ${result.data.formatted}`);
+      } else {
+        setExchangeRateInfo("⚠ Gagal mengambil kurs, gunakan manual");
+      }
+    } catch (error) {
+      console.error("Error fetching exchange rate:", error);
+      setExchangeRateInfo("⚠ Gagal mengambil kurs, gunakan manual");
+    } finally {
+      setLoadingExchangeRate(false);
+    }
+  }, []);
+
+  // Auto-fetch exchange rate when form opens (for new entry only)
+  useEffect(() => {
+    if (showForm && !editingId) {
+      fetchExchangeRate();
+    }
+  }, [showForm, editingId, fetchExchangeRate]);
 
   // Alt+S shortcut to save
   const triggerSave = useCallback(() => {
@@ -1886,17 +1923,53 @@ const KOPPage = ({ plant }: KOPPageProps) => {
 
             {/* Kurs Dollar */}
             <div className="mb-4 p-3 bg-amber-50 rounded-lg">
-              <Input
-                label="Kurs Dollar (Rp)"
-                type="text"
-                value={form.kursDollar}
-                onChange={(e) =>
-                  setForm({ ...form, kursDollar: e.target.value })
-                }
-                placeholder="Contoh: 16000"
-              />
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="h-4 w-4 text-amber-600" />
+                <label className="text-sm font-medium text-dark-700">
+                  Kurs Dollar (Rp)
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={form.kursDollar}
+                  onChange={(e) =>
+                    setForm({ ...form, kursDollar: e.target.value })
+                  }
+                  placeholder="Contoh: 16000"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fetchExchangeRate}
+                  disabled={loadingExchangeRate}
+                  className="whitespace-nowrap"
+                >
+                  {loadingExchangeRate ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Auto
+                    </>
+                  )}
+                </Button>
+              </div>
+              {exchangeRateInfo && (
+                <p
+                  className={`text-xs mt-1 ${
+                    exchangeRateInfo.startsWith("✓")
+                      ? "text-green-600"
+                      : "text-amber-600"
+                  }`}
+                >
+                  {exchangeRateInfo}
+                </p>
+              )}
               <p className="text-xs text-amber-600 mt-1">
-                * Kurs digunakan untuk perhitungan biaya Steam & Gas
+                * Kurs digunakan untuk perhitungan biaya Steam & Gas. Klik
+                "Auto" untuk ambil kurs real-time.
               </p>
             </div>
 
