@@ -57,6 +57,19 @@ const SHEET_HEADERS = {
     "createdAt",
     "updatedAt",
   ],
+  dokumentasi_foto: [
+    "id",
+    "tanggal",
+    "judul",
+    "keterangan",
+    "fileId",
+    "fileUrl",
+    "folderId",
+    "folderUrl",
+    "uploadBy",
+    "plant",
+    "createdAt",
+  ],
   sessions: [
     "id",
     "username",
@@ -343,6 +356,12 @@ function handleRequest(e) {
           break;
         case "deleteSession":
           result = deleteSession(body.data);
+          break;
+        case "uploadPhoto":
+          result = uploadPhotoToGoogleDrive(body.data);
+          break;
+        case "deletePhoto":
+          result = deletePhotoFromGoogleDrive(body.data);
           break;
         default:
           result = { success: false, error: "Unknown action" };
@@ -708,6 +727,147 @@ function deleteSession(data) {
 }
 
 // ============================================
+// PHOTO DOCUMENTATION FUNCTIONS
+// ============================================
+
+/**
+ * Upload photo to Google Drive
+ * Data format:
+ * {
+ *   judul: "C2-L-001",
+ *   keterangan: "Deskripsi foto",
+ *   imageBase64: "base64 string",
+ *   fileName: "photo.jpg",
+ *   uploadBy: "username",
+ *   plant: "NPK1"
+ * }
+ */
+function uploadPhotoToGoogleDrive(data) {
+  try {
+    const { judul, keterangan, imageBase64, fileName, uploadBy, plant } = data;
+
+    if (!judul || !imageBase64 || !uploadBy) {
+      return {
+        success: false,
+        error: "Judul, foto, dan user diperlukan",
+      };
+    }
+
+    // Get or create main documentation folder
+    const mainFolder = getOrCreateFolder(
+      "Dokumentasi Foto",
+      DriveApp.getRootFolder()
+    );
+
+    // Get or create subfolder based on judul
+    const subFolder = getOrCreateFolder(judul, mainFolder);
+
+    // Decode base64 image
+    const base64Data = imageBase64.split(",")[1] || imageBase64; // Remove data:image/jpeg;base64, prefix if exists
+    const blob = Utilities.newBlob(
+      Utilities.base64Decode(base64Data),
+      "image/jpeg",
+      fileName || `photo_${new Date().getTime()}.jpg`
+    );
+
+    // Upload file to Google Drive
+    const file = subFolder.createFile(blob);
+
+    // Make file accessible via link
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // Save metadata to sheet
+    const photoData = {
+      id: generateId(),
+      tanggal: Utilities.formatDate(
+        new Date(),
+        Session.getScriptTimeZone(),
+        "yyyy-MM-dd"
+      ),
+      judul: judul,
+      keterangan: keterangan || "",
+      fileId: file.getId(),
+      fileUrl: file.getUrl(),
+      folderId: subFolder.getId(),
+      folderUrl: subFolder.getUrl(),
+      uploadBy: uploadBy,
+      plant: plant || "",
+      createdAt: new Date().toISOString(),
+    };
+
+    const sheetName =
+      plant === "NPK1" ? "dokumentasi_foto_NPK1" : "dokumentasi_foto";
+    const result = createRecord(sheetName, photoData);
+
+    if (result.success) {
+      return {
+        success: true,
+        data: {
+          ...photoData,
+          thumbnailUrl: `https://drive.google.com/thumbnail?id=${file.getId()}&sz=w500`,
+        },
+      };
+    }
+
+    return result;
+  } catch (error) {
+    return {
+      success: false,
+      error: `Upload gagal: ${error.toString()}`,
+    };
+  }
+}
+
+/**
+ * Delete photo from Google Drive and database
+ */
+function deletePhotoFromGoogleDrive(data) {
+  try {
+    const { id, fileId, plant } = data;
+
+    if (!id || !fileId) {
+      return {
+        success: false,
+        error: "ID dan File ID diperlukan",
+      };
+    }
+
+    // Delete file from Google Drive
+    try {
+      const file = DriveApp.getFileById(fileId);
+      file.setTrashed(true); // Move to trash instead of permanent delete
+    } catch (error) {
+      Logger.log(`File not found or already deleted: ${fileId}`);
+    }
+
+    // Delete record from sheet
+    const sheetName =
+      plant === "NPK1" ? "dokumentasi_foto_NPK1" : "dokumentasi_foto";
+    const result = deleteRecord(sheetName, { id: id });
+
+    return result;
+  } catch (error) {
+    return {
+      success: false,
+      error: `Delete gagal: ${error.toString()}`,
+    };
+  }
+}
+
+/**
+ * Get or create folder in Google Drive
+ */
+function getOrCreateFolder(folderName, parentFolder) {
+  const folders = parentFolder.getFoldersByName(folderName);
+
+  if (folders.hasNext()) {
+    return folders.next();
+  } else {
+    return parentFolder.createFolder(folderName);
+  }
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -792,6 +952,8 @@ function initializeAllSheets() {
     "perbaikan_tahunan_NPK1",
     "trouble_record",
     "trouble_record_NPK1",
+    "dokumentasi_foto",
+    "dokumentasi_foto_NPK1",
     "akun",
     "rkap",
     "approval_requests",

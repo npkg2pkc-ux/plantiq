@@ -14,6 +14,23 @@ export type ApprovalStatus = "pending" | "approved" | "rejected";
 export type TroubleStatus = "Open" | "Closed" | "In Progress" | "Pending";
 export type VibrasiStatus = "Normal" | "Warning" | "Critical" | "Alert";
 
+// Dokumentasi Foto
+export interface DokumentasiFoto {
+  id?: string;
+  tanggal: string;
+  judul: string;
+  keterangan?: string;
+  fileId: string;
+  fileUrl: string;
+  folderId?: string;
+  folderUrl?: string;
+  thumbnailUrl?: string;
+  uploadBy: string;
+  plant?: PlantType;
+  _plant?: PlantType;
+  createdAt?: string;
+}
+
 // Produksi NPK Granul
 export interface ProduksiNPK {
   id?: string;

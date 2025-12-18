@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import type { ApiResponse } from "@/types";
+import type { ApiResponse, DokumentasiFoto } from "@/types";
 
 // API Base URL - ganti dengan URL deployment Google Apps Script Anda
 const API_BASE =
@@ -246,4 +246,36 @@ export const SHEETS = {
   CHAT_MESSAGES: "chat_messages",
   AKUN: "akun",
   RKAP: "rkap",
+  DOKUMENTASI_FOTO: "dokumentasi_foto",
 } as const;
+
+// ============================================
+// PHOTO DOCUMENTATION API
+// ============================================
+
+// Upload photo to Google Drive
+export async function uploadPhoto(data: {
+  judul: string;
+  keterangan?: string;
+  imageBase64: string;
+  fileName: string;
+  uploadBy: string;
+  plant: string;
+}): Promise<ApiResponse<DokumentasiFoto>> {
+  return fetchPOST<DokumentasiFoto>({
+    action: "uploadPhoto",
+    data,
+  });
+}
+
+// Delete photo from Google Drive
+export async function deletePhoto(data: {
+  id: string;
+  fileId: string;
+  plant: string;
+}): Promise<ApiResponse<boolean>> {
+  return fetchPOST<boolean>({
+    action: "deletePhoto",
+    data,
+  });
+}

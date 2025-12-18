@@ -99,6 +99,8 @@ const navItems: NavItemProps[] = [
       { name: "Perbaikan Tahunan NPK2", path: "/data/perbaikan-tahunan-npk2" },
       { name: "Trouble Record NPK1", path: "/data/trouble-record-npk1" },
       { name: "Trouble Record NPK2", path: "/data/trouble-record-npk2" },
+      { name: "Dokumentasi Foto NPK1", path: "/data/dokumentasi-foto-npk1" },
+      { name: "Dokumentasi Foto NPK2", path: "/data/dokumentasi-foto-npk2" },
     ],
   },
   {
