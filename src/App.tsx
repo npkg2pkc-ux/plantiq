@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { useAuthStore } from "@/stores";
 import {
   canViewUsersPage,
@@ -102,6 +103,7 @@ const RKAPPageRoute = ({ children }: { children: ReactNode }) => {
 function App() {
   return (
     <>
+      <Analytics />
       <Routes>
         {/* Public Routes */}
         <Route
