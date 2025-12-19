@@ -48,3 +48,5 @@ export {
 } from "./Loading";
 
 export { default as PrintModal } from "./PrintModal";
+
+export { InstallPrompt } from "./InstallPrompt";
