@@ -48,5 +48,7 @@ export {
 } from "./Loading";
 
 export { default as PrintModal } from "./PrintModal";
+export { default as BBMPrintModal } from "./BBMPrintModal";
+export { default as GatePassPrintModal } from "./GatePassPrintModal";
 
 export { InstallPrompt } from "./InstallPrompt";

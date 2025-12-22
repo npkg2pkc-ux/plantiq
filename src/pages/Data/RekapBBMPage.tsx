@@ -7,6 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
   BarChart3,
+  Printer,
 } from "lucide-react";
 import { useSaveShortcut } from "@/hooks";
 import {
@@ -21,6 +22,7 @@ import {
   SuccessOverlay,
   ApprovalDialog,
   Select,
+  BBMPrintModal,
 } from "@/components/ui";
 import { useAuthStore } from "@/stores";
 import {
@@ -91,6 +93,7 @@ const RekapBBMPage = ({ plant }: RekapBBMPageProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<RekapBBM>(initialFormState);
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [showPrintModal, setShowPrintModal] = useState(false);
   const currentPlant = plant;
 
   // Approval states
@@ -503,6 +506,14 @@ const RekapBBMPage = ({ plant }: RekapBBMPageProps) => {
               options={MONTH_OPTIONS}
               className="w-40"
             />
+            <Button
+              variant="secondary"
+              onClick={() => setShowPrintModal(true)}
+              className="border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Cetak
+            </Button>
             {userCanAdd && (
               <Button
                 onClick={() => {
@@ -654,6 +665,14 @@ const RekapBBMPage = ({ plant }: RekapBBMPageProps) => {
             : "Data berhasil disimpan!"
         }
         onClose={() => setShowSuccess(false)}
+      />
+
+      {/* Print Modal */}
+      <BBMPrintModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        data={filteredData}
+        plant={currentPlant}
       />
     </div>
   );

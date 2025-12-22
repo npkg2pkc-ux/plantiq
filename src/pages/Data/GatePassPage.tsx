@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Edit2, Trash2, Search, Truck } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, Truck, Printer } from "lucide-react";
 import { useSaveShortcut } from "@/hooks";
 import {
   Button,
@@ -13,6 +13,7 @@ import {
   DataTable,
   SuccessOverlay,
   ApprovalDialog,
+  GatePassPrintModal,
 } from "@/components/ui";
 import { useAuthStore } from "@/stores";
 import {
@@ -53,6 +54,8 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<GatePass>(initialFormState);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printItem, setPrintItem] = useState<GatePass | null>(null);
   // Plant is now set from prop
   const currentPlant = plant;
 
@@ -315,10 +318,12 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
     const matchesSearch =
       item.tanggal?.includes(searchTerm) ||
       item.nomorGatePass?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.deskripsiBarang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.noPolisi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.pemilikBarang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.namaPembawa?.toLowerCase().includes(searchTerm.toLowerCase());
+      item.namaPembawa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.mengetahui?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.deskripsiBarang?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.alasanKeluar?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesPlant = item._plant === currentPlant;
 
@@ -398,7 +403,9 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
               <Truck className="h-5 w-5 text-primary-600" />
             </div>
             <div>
-              <p className="text-sm text-dark-500 dark:text-dark-400">Total Gate Pass</p>
+              <p className="text-sm text-dark-500 dark:text-dark-400">
+                Total Gate Pass
+              </p>
               <p className="text-2xl font-bold text-primary-600">{totalData}</p>
             </div>
           </div>
@@ -427,34 +434,46 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
           columns={columns}
           loading={loading}
           searchable={false}
-          actions={
-            !userIsViewOnly
-              ? (row) => (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEdit(row);
-                      }}
-                    >
-                      <Edit2 className="h-4 w-4 text-primary-600" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(row.id!);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                )
-              : undefined
-          }
+          actions={(row) => (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPrintItem(row);
+                  setShowPrintModal(true);
+                }}
+                title="Cetak Gate Pass"
+              >
+                <Printer className="h-4 w-4 text-amber-600" />
+              </Button>
+              {!userIsViewOnly && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(row);
+                    }}
+                  >
+                    <Edit2 className="h-4 w-4 text-primary-600" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(row.id!);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         />
       </Card>
 
@@ -492,18 +511,17 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
             />
           </div>
 
-          <Input
-            label="No Polisi"
-            type="text"
-            value={form.noPolisi}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, noPolisi: e.target.value }))
-            }
-            placeholder="Nomor polisi kendaraan"
-            required
-          />
-
           <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="No Polisi"
+              type="text"
+              value={form.noPolisi}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, noPolisi: e.target.value }))
+              }
+              placeholder="Contoh: T 8643 HI"
+              required
+            />
             <Input
               label="Pemilik Barang"
               type="text"
@@ -514,6 +532,9 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
               placeholder="Nama pemilik barang"
               required
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <Input
               label="Nama Pembawa"
               type="text"
@@ -524,18 +545,17 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
               placeholder="Nama pembawa barang"
               required
             />
+            <Input
+              label="Mengetahui"
+              type="text"
+              value={form.mengetahui}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, mengetahui: e.target.value }))
+              }
+              placeholder="Nama yang mengetahui"
+              required
+            />
           </div>
-
-          <Input
-            label="Mengetahui"
-            type="text"
-            value={form.mengetahui}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, mengetahui: e.target.value }))
-            }
-            placeholder="Yang mengetahui"
-            required
-          />
 
           <div>
             <label className="block text-sm font-medium text-dark-700 mb-1">
@@ -550,14 +570,14 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
                 }))
               }
               placeholder="Deskripsi detail barang..."
-              className="input-field min-h-[120px]"
+              className="input-field min-h-[80px]"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-dark-700 mb-1">
-              Alasan Mengeluarkan Barang
+              Alasan Mengeluarkan
             </label>
             <textarea
               value={form.alasanKeluar}
@@ -625,6 +645,19 @@ const GatePassPage = ({ plant }: GatePassPageProps) => {
         message="Data berhasil disimpan!"
         onClose={() => setShowSuccess(false)}
       />
+
+      {/* Print Modal */}
+      {printItem && (
+        <GatePassPrintModal
+          isOpen={showPrintModal}
+          onClose={() => {
+            setShowPrintModal(false);
+            setPrintItem(null);
+          }}
+          data={printItem}
+          plant={currentPlant}
+        />
+      )}
     </div>
   );
 };
