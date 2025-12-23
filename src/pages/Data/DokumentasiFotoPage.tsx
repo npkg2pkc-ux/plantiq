@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera,
@@ -9,10 +10,12 @@ import {
   ExternalLink,
   Search,
   RefreshCw,
-  ChevronLeft,
   Download,
   ZoomIn,
   AlertCircle,
+  X,
+  RotateCcw,
+  Check,
 } from "lucide-react";
 import { Button, Card, Input, Spinner, Modal } from "@/components/ui";
 import {
@@ -63,6 +66,10 @@ export default function DokumentasiFotoPage({
   });
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [facingMode, setFacingMode] = useState<"environment" | "user">(
+    "environment"
+  );
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -107,17 +114,23 @@ export default function DokumentasiFotoPage({
   }, [fetchPhotos]);
 
   // Start camera
-  const startCamera = async () => {
+  const startCamera = async (facing: "environment" | "user" = facingMode) => {
     setCameraError(null);
     setCameraReady(false);
 
+    // Stop existing stream first
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
     try {
-      // Request camera access - prefer back camera for mobile
+      // Request camera access - prefer back camera for mobile, with full resolution
       const constraints: MediaStreamConstraints = {
         video: {
-          facingMode: { ideal: "environment" }, // Back camera preferred
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
+          facingMode: { ideal: facing },
+          width: { ideal: 4096 },
+          height: { ideal: 2160 },
         },
         audio: false,
       };
@@ -150,6 +163,13 @@ export default function DokumentasiFotoPage({
     }
   };
 
+  // Switch camera (front/back)
+  const switchCamera = () => {
+    const newFacing = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(newFacing);
+    startCamera(newFacing);
+  };
+
   // Stop camera
   const stopCamera = () => {
     if (streamRef.current) {
@@ -180,11 +200,17 @@ export default function DokumentasiFotoPage({
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // Get image data as base64
-    const imageData = canvas.toDataURL("image/jpeg", 0.8);
+    const imageData = canvas.toDataURL("image/jpeg", 0.9);
     setCapturedImage(imageData);
 
     // Stop camera after capture
     stopCamera();
+  };
+
+  // Confirm captured photo and show form
+  const confirmPhoto = () => {
+    setShowCameraModal(false);
+    setShowFormModal(true);
   };
 
   // Handle file input (for gallery selection)
@@ -202,8 +228,15 @@ export default function DokumentasiFotoPage({
     reader.onload = (event) => {
       const result = event.target?.result as string;
       setCapturedImage(result);
+      stopCamera();
+      // Show form modal after selecting from gallery
+      setShowCameraModal(false);
+      setShowFormModal(true);
     };
     reader.readAsDataURL(file);
+
+    // Reset input value so same file can be selected again
+    e.target.value = "";
   };
 
   // Open camera modal
@@ -223,6 +256,7 @@ export default function DokumentasiFotoPage({
     setFormData({ judul: "", keterangan: "" });
     setCameraError(null);
     setShowCameraModal(false);
+    setShowFormModal(false);
   };
 
   // Retake photo
@@ -478,105 +512,16 @@ export default function DokumentasiFotoPage({
         </div>
       )}
 
-      {/* Camera Modal */}
+      {/* Fullscreen Camera Overlay */}
       <AnimatePresence>
-        {showCameraModal && (
-          <Modal
-            isOpen={showCameraModal}
-            onClose={closeCameraModal}
-            title="Ambil Foto"
-            size="xl"
-          >
-            <div className="space-y-4">
-              {/* Camera View or Captured Image */}
-              <div className="relative bg-black rounded-lg overflow-hidden aspect-[4/3]">
-                {!capturedImage ? (
-                  <>
-                    {/* Video Stream */}
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                    />
-
-                    {/* Camera Loading */}
-                    {!cameraReady && !cameraError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                        <div className="text-center text-white">
-                          <Spinner />
-                          <p className="mt-2">Memuat kamera...</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Camera Error */}
-                    {cameraError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-                        <div className="text-center text-white p-4">
-                          <AlertCircle className="h-12 w-12 mx-auto mb-3 text-red-400" />
-                          <p className="mb-4">{cameraError}</p>
-                          <div className="flex gap-2 justify-center">
-                            <Button
-                              variant="outline"
-                              onClick={startCamera}
-                              className="text-white border-white hover:bg-white/10"
-                            >
-                              Coba Lagi
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => fileInputRef.current?.click()}
-                              className="text-white border-white hover:bg-white/10"
-                            >
-                              <Upload className="h-4 w-4 mr-2" />
-                              Pilih dari Galeri
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Capture Button */}
-                    {cameraReady && (
-                      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4">
-                        <Button
-                          onClick={capturePhoto}
-                          className="h-16 w-16 rounded-full bg-white hover:bg-gray-100 shadow-lg"
-                        >
-                          <Camera className="h-8 w-8 text-gray-900" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="rounded-full bg-white/20 border-white text-white hover:bg-white/30"
-                        >
-                          <Upload className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {/* Captured Image Preview */}
-                    <img
-                      src={capturedImage}
-                      alt="Captured"
-                      className="w-full h-full object-contain"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={retakePhoto}
-                      className="absolute bottom-4 left-4 bg-white/90 hover:bg-white"
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-2" />
-                      Ambil Ulang
-                    </Button>
-                  </>
-                )}
-              </div>
-
+        {showCameraModal &&
+          createPortal(
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-black"
+            >
               {/* Hidden canvas for capture */}
               <canvas ref={canvasRef} className="hidden" />
 
@@ -590,72 +535,267 @@ export default function DokumentasiFotoPage({
                 className="hidden"
               />
 
-              {/* Form - only show when image is captured */}
-              {capturedImage && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Judul / Nama Folder{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="Contoh: C2-L-001"
-                      value={formData.judul}
-                      onChange={(e) =>
-                        setFormData({ ...formData, judul: e.target.value })
-                      }
-                      className="w-full"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Foto akan disimpan di folder sesuai judul ini
-                    </p>
-                  </div>
+              {!capturedImage ? (
+                <>
+                  {/* Video Stream - Full Screen */}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                      transform: facingMode === "user" ? "scaleX(-1)" : "none",
+                    }}
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Keterangan
-                    </label>
-                    <textarea
-                      placeholder="Deskripsi foto (opsional)"
-                      value={formData.keterangan}
-                      onChange={(e) =>
-                        setFormData({ ...formData, keterangan: e.target.value })
-                      }
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
+                  {/* Top Bar */}
+                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/60 to-transparent">
+                    <button
                       onClick={closeCameraModal}
-                      className="flex-1"
-                      disabled={uploading}
+                      className="p-3 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
                     >
-                      Batal
-                    </Button>
-                    <Button
-                      onClick={handleUpload}
-                      disabled={uploading || !formData.judul.trim()}
-                      className="flex-1 bg-green-600 hover:bg-green-700"
+                      <X className="h-6 w-6" />
+                    </button>
+
+                    <span className="text-white font-medium text-lg drop-shadow-lg">
+                      Ambil Foto
+                    </span>
+
+                    <button
+                      onClick={switchCamera}
+                      className="p-3 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
                     >
-                      {uploading ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Mengupload...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Foto
-                        </>
-                      )}
-                    </Button>
+                      <RotateCcw className="h-6 w-6" />
+                    </button>
                   </div>
-                </div>
+
+                  {/* Camera Loading */}
+                  {!cameraReady && !cameraError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-20">
+                      <div className="text-center text-white">
+                        <Spinner />
+                        <p className="mt-2">Memuat kamera...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Camera Error */}
+                  {cameraError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
+                      <div className="text-center text-white p-6 max-w-sm">
+                        <AlertCircle className="h-16 w-16 mx-auto mb-4 text-red-400" />
+                        <p className="mb-6 text-lg">{cameraError}</p>
+                        <div className="flex flex-col gap-3">
+                          <Button
+                            onClick={() => startCamera()}
+                            className="bg-white text-black hover:bg-gray-200"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Coba Lagi
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-white border-white hover:bg-white/10"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Pilih dari Galeri
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bottom Controls */}
+                  {cameraReady && (
+                    <div className="absolute bottom-0 left-0 right-0 z-10 pb-8 pt-16 bg-gradient-to-t from-black/60 to-transparent">
+                      <div className="flex items-center justify-center gap-8">
+                        {/* Gallery Button */}
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="p-4 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
+                        >
+                          <Image className="h-7 w-7" />
+                        </button>
+
+                        {/* Capture Button */}
+                        <button
+                          onClick={capturePhoto}
+                          className="relative p-1 rounded-full bg-white"
+                        >
+                          <div className="w-20 h-20 rounded-full border-4 border-gray-300 flex items-center justify-center hover:bg-gray-100 transition-colors">
+                            <div className="w-16 h-16 rounded-full bg-white" />
+                          </div>
+                        </button>
+
+                        {/* Placeholder for symmetry */}
+                        <div className="p-4 w-14" />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Captured Image Preview - Full Screen */}
+                  <img
+                    src={capturedImage}
+                    alt="Captured"
+                    className="absolute inset-0 w-full h-full object-contain bg-black"
+                  />
+
+                  {/* Top Bar */}
+                  <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-black/60 to-transparent">
+                    <button
+                      onClick={closeCameraModal}
+                      className="p-3 rounded-full bg-black/30 text-white hover:bg-black/50 transition-colors"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+
+                    <span className="text-white font-medium text-lg drop-shadow-lg">
+                      Preview Foto
+                    </span>
+
+                    <div className="w-12" />
+                  </div>
+
+                  {/* Bottom Controls for Preview */}
+                  <div className="absolute bottom-0 left-0 right-0 z-10 pb-8 pt-16 bg-gradient-to-t from-black/60 to-transparent">
+                    <div className="flex items-center justify-center gap-8">
+                      {/* Retake Button */}
+                      <button
+                        onClick={retakePhoto}
+                        className="flex flex-col items-center gap-2 text-white"
+                      >
+                        <div className="p-4 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+                          <RotateCcw className="h-7 w-7" />
+                        </div>
+                        <span className="text-sm font-medium">Ulangi</span>
+                      </button>
+
+                      {/* Confirm Button */}
+                      <button
+                        onClick={confirmPhoto}
+                        className="flex flex-col items-center gap-2 text-white"
+                      >
+                        <div className="p-5 rounded-full bg-green-500 hover:bg-green-600 transition-colors">
+                          <Check className="h-10 w-10" />
+                        </div>
+                        <span className="text-sm font-medium">
+                          Gunakan Foto
+                        </span>
+                      </button>
+
+                      {/* Placeholder for symmetry */}
+                      <div className="p-4 w-14 flex flex-col items-center gap-2">
+                        <div className="p-4 w-14" />
+                        <span className="text-sm">&nbsp;</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
+            </motion.div>,
+            document.body
+          )}
+      </AnimatePresence>
+
+      {/* Form Modal - After Photo Captured */}
+      <AnimatePresence>
+        {showFormModal && capturedImage && (
+          <Modal
+            isOpen={showFormModal}
+            onClose={closeCameraModal}
+            title="Upload Foto"
+            size="lg"
+          >
+            <div className="space-y-4">
+              {/* Image Preview Thumbnail */}
+              <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+                <img
+                  src={capturedImage}
+                  alt="Captured"
+                  className="w-full h-48 object-cover"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowFormModal(false);
+                    setShowCameraModal(true);
+                    retakePhoto();
+                  }}
+                  className="absolute bottom-2 right-2 bg-white/90 hover:bg-white"
+                >
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Ganti Foto
+                </Button>
+              </div>
+
+              {/* Form */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Judul / Nama Folder <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Contoh: C2-L-001"
+                    value={formData.judul}
+                    onChange={(e) =>
+                      setFormData({ ...formData, judul: e.target.value })
+                    }
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Foto akan disimpan di folder sesuai judul ini
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Keterangan
+                  </label>
+                  <textarea
+                    placeholder="Deskripsi foto (opsional)"
+                    value={formData.keterangan}
+                    onChange={(e) =>
+                      setFormData({ ...formData, keterangan: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={closeCameraModal}
+                    className="flex-1"
+                    disabled={uploading}
+                  >
+                    Batal
+                  </Button>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading || !formData.judul.trim()}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    {uploading ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Mengupload...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Foto
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
             </div>
           </Modal>
         )}
