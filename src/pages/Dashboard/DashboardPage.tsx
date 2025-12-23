@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   BarChart,
@@ -202,6 +203,17 @@ const DashboardPage = () => {
     setDashboardPlantFilter,
     setDashboardYear,
   } = useUIStore();
+
+  const navigate = useNavigate();
+
+  // Helper function to get plant-specific route
+  const getPlantRoute = (basePath: string) => {
+    const plant =
+      effectivePlantFilter === "ALL"
+        ? "npk2"
+        : effectivePlantFilter.toLowerCase();
+    return `${basePath}-${plant}`;
+  };
 
   const [loading, setLoading] = useState(true);
 
@@ -884,7 +896,12 @@ const DashboardPage = () => {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white shadow-lg"
+        onClick={() =>
+          navigate(
+            `/produksi/${effectivePlantFilter === "NPK1" ? "npk1" : "npk2"}`
+          )
+        }
+        className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-2xl p-6 text-white shadow-lg cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-300"
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -893,6 +910,7 @@ const DashboardPage = () => {
               <h2 className="text-xl font-bold">
                 Produksi Bulan {currentMonthData.monthName} {dashboardYear}
               </h2>
+              <ArrowUpRight className="h-5 w-5 opacity-60 ml-2" />
             </div>
             <p className="text-primary-100 text-sm">
               Ringkasan produksi {plantLabel.toLowerCase()} bulan ini
@@ -971,11 +989,19 @@ const DashboardPage = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg"
+          onClick={() =>
+            navigate(
+              `/produksi/${effectivePlantFilter === "NPK1" ? "npk1" : "npk2"}`
+            )
+          }
+          className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-5 text-white shadow-lg cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-300"
         >
-          <div className="flex items-center gap-2 mb-4">
-            <Factory className="h-5 w-5" />
-            <h3 className="font-bold">Produksi Tahunan {dashboardYear}</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Factory className="h-5 w-5" />
+              <h3 className="font-bold">Produksi Tahunan {dashboardYear}</h3>
+            </div>
+            <ArrowUpRight className="h-4 w-4 opacity-60" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
@@ -1040,12 +1066,23 @@ const DashboardPage = () => {
           transition={{ delay: 0.1 }}
           className="bg-gradient-to-r from-slate-600 to-slate-700 rounded-2xl p-5 text-white shadow-lg"
         >
-          <div className="flex items-center gap-2 mb-4">
-            <Truck className="h-5 w-5" />
-            <h3 className="font-bold">Operasional & Logistik</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              <h3 className="font-bold">Operasional & Logistik</h3>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/laporan/timesheet-forklift-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-slate-200 text-[10px] uppercase tracking-wider">
                 Forklift
               </p>
@@ -1056,7 +1093,16 @@ const DashboardPage = () => {
                 Jam ({filteredData.timesheetForklift.length} rec)
               </p>
             </div>
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/laporan/timesheet-loader-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-slate-200 text-[10px] uppercase tracking-wider">
                 Loader
               </p>
@@ -1067,14 +1113,32 @@ const DashboardPage = () => {
                 Jam ({filteredData.timesheetLoader.length} rec)
               </p>
             </div>
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/data/gate-pass-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-slate-200 text-[10px] uppercase tracking-wider">
                 Gate Pass
               </p>
               <p className="text-xl font-bold">{metrics.gatePassCount}</p>
               <p className="text-slate-200 text-[10px]">Transaksi</p>
             </div>
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/data/bahan-baku-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-slate-200 text-[10px] uppercase tracking-wider">
                 Bahan Baku
               </p>
@@ -1098,12 +1162,23 @@ const DashboardPage = () => {
           transition={{ delay: 0.2 }}
           className="bg-gradient-to-r from-red-500 to-rose-500 rounded-2xl p-5 text-white shadow-lg"
         >
-          <div className="flex items-center gap-2 mb-4">
-            <Clock className="h-5 w-5" />
-            <h3 className="font-bold">Downtime & Issues</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              <h3 className="font-bold">Downtime & Issues</h3>
+            </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/laporan/downtime-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-red-100 text-[10px] uppercase tracking-wider">
                 Total Downtime
               </p>
@@ -1114,7 +1189,16 @@ const DashboardPage = () => {
                 Jam ({filteredData.downtime.length} kejadian)
               </p>
             </div>
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/data/work-request-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-red-100 text-[10px] uppercase tracking-wider">
                 Work Request
               </p>
@@ -1123,7 +1207,16 @@ const DashboardPage = () => {
                 {metrics.workRequestPending} pending
               </p>
             </div>
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/data/trouble-record-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-red-100 text-[10px] uppercase tracking-wider">
                 Trouble Open
               </p>
@@ -1132,7 +1225,16 @@ const DashboardPage = () => {
                 dari {filteredData.troubleRecord.length} total
               </p>
             </div>
-            <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={() =>
+                navigate(
+                  `/data/vibrasi-${
+                    effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+                  }`
+                )
+              }
+              className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/30 transition-colors"
+            >
               <p className="text-red-100 text-[10px] uppercase tracking-wider">
                 Vibrasi Alert
               </p>
@@ -1149,11 +1251,23 @@ const DashboardPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-lg"
+          onClick={() =>
+            navigate(
+              `/data/rekap-bbm-${
+                effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+              }`
+            )
+          }
+          className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-5 text-white shadow-lg cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-300"
         >
-          <div className="flex items-center gap-2 mb-4">
-            <Fuel className="h-5 w-5" />
-            <h3 className="font-bold">Rekap BBM Alat Berat {dashboardYear}</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Fuel className="h-5 w-5" />
+              <h3 className="font-bold">
+                Rekap BBM Alat Berat {dashboardYear}
+              </h3>
+            </div>
+            <ArrowUpRight className="h-4 w-4 opacity-60" />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-white/20 rounded-xl px-4 py-3 backdrop-blur-sm">
@@ -1202,22 +1316,36 @@ const DashboardPage = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
-        className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 text-white shadow-lg"
+        onClick={() =>
+          navigate(
+            `/laporan/pemantauan-bb-${
+              effectivePlantFilter === "NPK1" ? "npk1" : "npk2"
+            }`
+          )
+        }
+        className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-5 text-white shadow-lg cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-300"
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex items-center gap-2">
             <Package className="h-5 w-5" />
             <h3 className="font-bold">Pemantauan Stok Bahan Baku</h3>
           </div>
-          <Select
-            value={pemantauanBBFilter}
-            onChange={(e) => setPemantauanBBFilter(e.target.value)}
-            className="w-full sm:w-40 bg-white/20 border-white/30 text-white text-sm"
-            options={BAHAN_BAKU_OPTIONS.map((opt) => ({
-              value: opt,
-              label: opt,
-            }))}
-          />
+          <div className="flex items-center gap-2">
+            <Select
+              value={pemantauanBBFilter}
+              onChange={(e) => {
+                e.stopPropagation();
+                setPemantauanBBFilter(e.target.value);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full sm:w-40 bg-white/20 border-white/30 text-white text-sm"
+              options={BAHAN_BAKU_OPTIONS.map((opt) => ({
+                value: opt,
+                label: opt,
+              }))}
+            />
+            <ArrowUpRight className="h-4 w-4 opacity-60" />
+          </div>
         </div>
         {(() => {
           const filteredBBData = pemantauanBBData.filter(
