@@ -249,6 +249,7 @@ export const SHEETS = {
   AKUN: "akun",
   RKAP: "rkap",
   DOKUMENTASI_FOTO: "dokumentasi_foto",
+  ACTIVE_USERS: "active_users",
 } as const;
 
 // ============================================

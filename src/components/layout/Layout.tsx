@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,6 +19,8 @@ import {
   X,
   Sun,
   Moon,
+  Users,
+  Circle,
 } from "lucide-react";
 import {
   cn,
@@ -35,6 +37,245 @@ import {
 } from "@/stores";
 import { Badge } from "@/components/ui";
 
+// ============================================
+// ACTIVE USERS MARQUEE COMPONENT
+// ============================================
+interface ActiveUser {
+  id: string;
+  username: string;
+  namaLengkap: string;
+  role: string;
+  plant: string;
+  lastActive: string;
+  status: string;
+}
+
+const ActiveUsersMarquee = () => {
+  const { user } = useAuthStore();
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Update current user's active status
+  const updateMyStatus = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { readData, createData, updateData, SHEETS } = await import(
+        "@/services/api"
+      );
+
+      // Check if user already exists in active_users
+      const result = await readData(SHEETS.ACTIVE_USERS);
+      const existingUsers = (result.data as ActiveUser[]) || [];
+      const existingUser = existingUsers.find(
+        (u) => u.username === user.username
+      );
+
+      const now = new Date().toISOString();
+
+      if (existingUser) {
+        // Update existing record
+        await updateData(SHEETS.ACTIVE_USERS, {
+          id: existingUser.id,
+          lastActive: now,
+          status: "online",
+        });
+      } else {
+        // Create new record
+        await createData(SHEETS.ACTIVE_USERS, {
+          username: user.username,
+          namaLengkap: user.namaLengkap || user.nama || user.username,
+          role: user.role,
+          plant: user.plant,
+          lastActive: now,
+          status: "online",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating active status:", error);
+    }
+  }, [user]);
+
+  // Fetch active users
+  const fetchActiveUsers = useCallback(async () => {
+    try {
+      const { readData, SHEETS } = await import("@/services/api");
+      const result = await readData(SHEETS.ACTIVE_USERS);
+
+      if (result.success && result.data) {
+        const users = result.data as ActiveUser[];
+        const now = new Date().getTime();
+        const TIMEOUT = 2 * 60 * 1000; // 2 minutes timeout
+
+        // Filter only users active within last 2 minutes
+        const onlineUsers = users.filter((u) => {
+          const lastActive = new Date(u.lastActive).getTime();
+          return now - lastActive < TIMEOUT;
+        });
+
+        setActiveUsers(onlineUsers);
+      }
+    } catch (error) {
+      console.error("Error fetching active users:", error);
+    }
+  }, []);
+
+  // Update status on mount and periodically
+  useEffect(() => {
+    if (user) {
+      // Update immediately
+      updateMyStatus();
+      fetchActiveUsers();
+
+      // Update every 30 seconds
+      const statusInterval = setInterval(updateMyStatus, 30000);
+      // Fetch active users every 15 seconds
+      const fetchInterval = setInterval(fetchActiveUsers, 15000);
+
+      return () => {
+        clearInterval(statusInterval);
+        clearInterval(fetchInterval);
+      };
+    }
+  }, [user, updateMyStatus, fetchActiveUsers]);
+
+  // Set status to offline on unmount/close
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      if (user) {
+        try {
+          const { readData, updateData, SHEETS } = await import(
+            "@/services/api"
+          );
+          const result = await readData(SHEETS.ACTIVE_USERS);
+          const existingUsers = (result.data as ActiveUser[]) || [];
+          const existingUser = existingUsers.find(
+            (u) => u.username === user.username
+          );
+          if (existingUser) {
+            await updateData(SHEETS.ACTIVE_USERS, {
+              id: existingUser.id,
+              status: "offline",
+            });
+          }
+        } catch (error) {
+          console.error("Error setting offline status:", error);
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [user]);
+
+  if (activeUsers.length === 0) return null;
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "bg-red-500";
+      case "supervisor":
+        return "bg-blue-500";
+      case "manager":
+        return "bg-purple-500";
+      case "avp":
+        return "bg-emerald-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const getPlantBadgeColor = (plant: string) => {
+    switch (plant) {
+      case "NPK1":
+        return "bg-orange-500";
+      case "NPK2":
+        return "bg-cyan-500";
+      case "ALL":
+        return "bg-gradient-to-r from-orange-500 to-cyan-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  // Duplicate content for seamless loop
+  const marqueeContent = [...activeUsers, ...activeUsers];
+
+  return (
+    <div
+      className="bg-gradient-to-r from-primary-600 via-primary-500 to-secondary-500 text-white overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div className="flex items-center h-8">
+        {/* Fixed Label */}
+        <div className="flex-shrink-0 flex items-center gap-2 px-4 bg-primary-700/50 h-full border-r border-white/20">
+          <Users className="h-4 w-4" />
+          <span className="text-xs font-semibold whitespace-nowrap">
+            Online ({activeUsers.length})
+          </span>
+        </div>
+
+        {/* Scrolling Content */}
+        <div className="flex-1 overflow-hidden relative">
+          <motion.div
+            className="flex items-center gap-6 whitespace-nowrap"
+            animate={{
+              x: isPaused ? 0 : [0, -50 * activeUsers.length],
+            }}
+            transition={{
+              x: {
+                duration: activeUsers.length * 5,
+                repeat: Infinity,
+                ease: "linear",
+              },
+            }}
+            style={{ paddingLeft: "100%" }}
+          >
+            {marqueeContent.map((activeUser, index) => (
+              <div
+                key={`${activeUser.username}-${index}`}
+                className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full backdrop-blur-sm"
+              >
+                {/* Online indicator */}
+                <Circle className="h-2 w-2 fill-green-400 text-green-400 animate-pulse" />
+
+                {/* User info */}
+                <span className="text-xs font-medium">
+                  {activeUser.namaLengkap}
+                </span>
+
+                {/* Role badge */}
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full text-white font-medium uppercase",
+                    getRoleBadgeColor(activeUser.role)
+                  )}
+                >
+                  {activeUser.role}
+                </span>
+
+                {/* Plant badge */}
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full text-white font-medium",
+                    getPlantBadgeColor(activeUser.plant)
+                  )}
+                >
+                  {activeUser.plant}
+                </span>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// NAVIGATION ITEMS
+// ============================================
 interface NavItemProps {
   name: string;
   path: string;
@@ -265,7 +506,7 @@ const Sidebar = () => {
               Plantiffy
             </span>
             <span className="text-xs text-dark-500 dark:text-dark-400">
-              v2.2.4
+              v2.2.5
             </span>
           </Link>
         )}
@@ -538,7 +779,7 @@ const Header = () => {
   return (
     <header
       className={cn(
-        "fixed top-0 right-0 z-30 h-16 bg-white/80 dark:bg-dark-800/80 backdrop-blur-md border-b border-dark-100 dark:border-dark-700 transition-all duration-300",
+        "fixed top-8 right-0 z-30 h-16 bg-white/80 dark:bg-dark-800/80 backdrop-blur-md border-b border-dark-100 dark:border-dark-700 transition-all duration-300",
         sidebarCollapsed ? "left-20" : "left-64"
       )}
     >
@@ -1039,11 +1280,21 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-dark-50 dark:bg-dark-900 transition-colors duration-300">
+      {/* Active Users Marquee - Fixed at top */}
+      <div
+        className={cn(
+          "fixed top-0 right-0 z-40 transition-all duration-300",
+          sidebarCollapsed ? "left-20" : "left-64"
+        )}
+      >
+        <ActiveUsersMarquee />
+      </div>
+
       <Sidebar />
       <Header />
       <main
         className={cn(
-          "pt-16 min-h-screen transition-all duration-300",
+          "pt-24 min-h-screen transition-all duration-300",
           sidebarCollapsed ? "pl-20" : "pl-64"
         )}
       >

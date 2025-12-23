@@ -51,6 +51,7 @@
  * - monthly_notes
  * - notifications
  * - chat_messages
+ * - active_users
  */
 
 // ============================================
@@ -312,6 +313,15 @@ const SHEET_HEADERS = {
     "toUser",
   ],
   chat_messages: ["id", "sender", "role", "message", "timestamp"],
+  active_users: [
+    "id",
+    "username",
+    "namaLengkap",
+    "role",
+    "plant",
+    "lastActive",
+    "status",
+  ],
   rekap_bbm: [
     "id",
     "tanggal",
@@ -1247,6 +1257,7 @@ function initializeAllSheets() {
     "monthly_notes",
     "notifications",
     "chat_messages",
+    "active_users",
   ];
 
   allSheets.forEach((sheetName) => {
