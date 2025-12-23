@@ -160,7 +160,40 @@ export const useChatStore = create<ChatState>()(
         set((state) => ({
           messages: state.messages.filter((m) => m.id !== tempId),
         })),
-      setMessages: (messages) => set({ messages }),
+      setMessages: (newMessages) =>
+        set((state) => {
+          // Keep optimistic messages (those with temp_ prefix) that aren't synced yet
+          const optimisticMessages = state.messages.filter(
+            (m) => m.id && m.id.startsWith("temp_")
+          );
+
+          // Check if optimistic message content exists in new messages from server
+          // If yes, it means server has synced, so we can remove the optimistic one
+          const unSyncedOptimistic = optimisticMessages.filter((opt) => {
+            // Check if there's a server message with same sender, message, and similar timestamp
+            const synced = newMessages.some(
+              (serverMsg) =>
+                serverMsg.sender === opt.sender &&
+                serverMsg.message === opt.message &&
+                Math.abs(
+                  new Date(serverMsg.timestamp).getTime() -
+                    new Date(opt.timestamp).getTime()
+                ) < 5000 // Within 5 seconds
+            );
+            return !synced; // Keep if NOT synced yet
+          });
+
+          // Merge: server messages + unsynced optimistic messages
+          const mergedMessages = [...newMessages, ...unSyncedOptimistic];
+
+          // Sort by timestamp
+          mergedMessages.sort(
+            (a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+
+          return { messages: mergedMessages };
+        }),
       setUnreadChatCount: (count) => set({ unreadChatCount: count }),
       markChatAsRead: () =>
         set({

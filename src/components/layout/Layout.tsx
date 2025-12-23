@@ -839,8 +839,7 @@ const ChatPanel = () => {
     const lastReadKey = `chat_last_read_${user.username}`;
     localStorage.setItem(lastReadKey, timestamp);
 
-    // BACKGROUND: Send to database
-    setLoading(true);
+    // BACKGROUND: Send to database (no need to update UI again, just sync)
     try {
       const { createData, SHEETS } = await import("@/services/api");
 
@@ -852,22 +851,17 @@ const ChatPanel = () => {
       };
 
       const result = await createData(SHEETS.CHAT_MESSAGES, messageData);
-      if (result.success && result.data) {
-        // Replace optimistic message with real one from server
-        removeOptimisticMessage(tempId);
-        // Fetch all messages to ensure correct order and real IDs
-        await fetchMessages();
-      } else {
-        // If failed, remove optimistic message
+      if (!result.success) {
+        // Only remove optimistic message if failed
         removeOptimisticMessage(tempId);
         console.error("Failed to send message");
       }
+      // On success: Don't remove or refetch - let background polling handle sync
+      // This prevents the "blink" effect
     } catch (error) {
       // On error, remove optimistic message
       removeOptimisticMessage(tempId);
       console.error("Error sending message:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
