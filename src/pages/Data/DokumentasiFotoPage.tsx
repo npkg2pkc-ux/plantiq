@@ -113,8 +113,18 @@ export default function DokumentasiFotoPage({
     fetchPhotos();
   }, [fetchPhotos]);
 
-  // Start camera
-  const startCamera = async (facing: "environment" | "user" = facingMode) => {
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+    };
+  }, []);
+
+  // Start camera - simplified version
+  const startCamera = useCallback(async (facing: "environment" | "user" = "environment") => {
     setCameraError(null);
     setCameraReady(false);
 
@@ -125,12 +135,10 @@ export default function DokumentasiFotoPage({
     }
 
     try {
-      // Request camera access - prefer back camera for mobile, with full resolution
+      // Simple constraints that work on most devices
       const constraints: MediaStreamConstraints = {
         video: {
-          facingMode: { ideal: facing },
-          width: { ideal: 4096 },
-          height: { ideal: 2160 },
+          facingMode: facing,
         },
         audio: false,
       };
@@ -140,10 +148,8 @@ export default function DokumentasiFotoPage({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-          setCameraReady(true);
-        };
+        // Let autoPlay handle playing
+        setCameraReady(true);
       }
     } catch (error) {
       console.error("Camera error:", error);
@@ -156,22 +162,26 @@ export default function DokumentasiFotoPage({
           setCameraError(
             "Kamera tidak ditemukan. Pastikan perangkat memiliki kamera."
           );
+        } else if (error.name === "NotReadableError") {
+          setCameraError(
+            "Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain dan coba lagi."
+          );
         } else {
           setCameraError(`Error: ${error.message}`);
         }
       }
     }
-  };
+  }, []);
 
   // Switch camera (front/back)
-  const switchCamera = () => {
+  const switchCamera = useCallback(() => {
     const newFacing = facingMode === "environment" ? "user" : "environment";
     setFacingMode(newFacing);
     startCamera(newFacing);
-  };
+  }, [facingMode, startCamera]);
 
   // Stop camera
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -180,10 +190,10 @@ export default function DokumentasiFotoPage({
       videoRef.current.srcObject = null;
     }
     setCameraReady(false);
-  };
+  }, []);
 
   // Capture photo from camera
-  const capturePhoto = () => {
+  const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -205,16 +215,16 @@ export default function DokumentasiFotoPage({
 
     // Stop camera after capture
     stopCamera();
-  };
+  }, [stopCamera]);
 
   // Confirm captured photo and show form
-  const confirmPhoto = () => {
+  const confirmPhoto = useCallback(() => {
     setShowCameraModal(false);
     setShowFormModal(true);
-  };
+  }, []);
 
   // Handle file input (for gallery selection)
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -237,33 +247,54 @@ export default function DokumentasiFotoPage({
 
     // Reset input value so same file can be selected again
     e.target.value = "";
-  };
+  }, [stopCamera]);
 
   // Open camera modal
   const openCameraModal = () => {
     setCapturedImage(null);
     setFormData({ judul: "", keterangan: "" });
     setCameraError(null);
+    setCameraReady(false);
     setShowCameraModal(true);
-    // Start camera after modal opens
-    setTimeout(() => startCamera(), 300);
   };
 
+  // Effect to start camera when modal opens
+  useEffect(() => {
+    let mounted = true;
+    
+    if (showCameraModal && !capturedImage) {
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        if (mounted) {
+          startCamera(facingMode);
+        }
+      }, 200);
+      return () => {
+        mounted = false;
+        clearTimeout(timer);
+      };
+    }
+    
+    return () => {
+      mounted = false;
+    };
+  }, [showCameraModal, capturedImage, facingMode, startCamera]);
+
   // Close camera modal
-  const closeCameraModal = () => {
+  const closeCameraModal = useCallback(() => {
     stopCamera();
     setCapturedImage(null);
     setFormData({ judul: "", keterangan: "" });
     setCameraError(null);
     setShowCameraModal(false);
     setShowFormModal(false);
-  };
+  }, [stopCamera]);
 
   // Retake photo
-  const retakePhoto = () => {
+  const retakePhoto = useCallback(() => {
     setCapturedImage(null);
-    startCamera();
-  };
+    startCamera(facingMode);
+  }, [facingMode, startCamera]);
 
   // Upload photo
   const handleUpload = async () => {
@@ -525,12 +556,11 @@ export default function DokumentasiFotoPage({
               {/* Hidden canvas for capture */}
               <canvas ref={canvasRef} className="hidden" />
 
-              {/* Hidden file input */}
+              {/* Hidden file input - NO capture attribute to avoid triggering native camera */}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleFileInput}
                 className="hidden"
               />
@@ -543,9 +573,12 @@ export default function DokumentasiFotoPage({
                     autoPlay
                     playsInline
                     muted
+                    onCanPlay={() => setCameraReady(true)}
                     className="absolute inset-0 w-full h-full object-cover"
                     style={{
                       transform: facingMode === "user" ? "scaleX(-1)" : "none",
+                      WebkitTransform:
+                        facingMode === "user" ? "scaleX(-1)" : "none",
                     }}
                   />
 
