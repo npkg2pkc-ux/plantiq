@@ -175,7 +175,7 @@
   }
 }
 
-/* Marquee Animation - Single track, right to left */
+/* Marquee Animation - Start from right edge */
 .marquee-wrapper {
   position: relative;
   width: 100%;
@@ -185,6 +185,7 @@
 .marquee-inner {
   display: inline-block;
   white-space: nowrap;
+  padding-left: 100%;
   animation: marquee-slide linear infinite;
 }
 
@@ -194,7 +195,7 @@
 
 @keyframes marquee-slide {
   0% {
-    transform: translateX(100%);
+    transform: translateX(0);
   }
   100% {
     transform: translateX(-100%);
