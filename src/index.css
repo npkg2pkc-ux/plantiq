@@ -173,6 +173,25 @@
   .animate-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
+
+  /* Marquee animation for active users */
+  .animate-marquee {
+    animation: marquee linear infinite;
+  }
+
+  .animation-paused {
+    animation-play-state: paused;
+  }
+}
+
+/* Marquee Keyframes */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-33.33%);
+  }
 }
 
 /* Custom Scrollbar */

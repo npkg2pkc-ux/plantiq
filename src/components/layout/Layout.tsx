@@ -198,8 +198,8 @@ const ActiveUsersMarquee = () => {
     }
   };
 
-  // Duplicate content for seamless loop
-  const marqueeContent = [...activeUsers, ...activeUsers];
+  // Duplicate content for seamless loop (3x for smoother transition)
+  const marqueeContent = [...activeUsers, ...activeUsers, ...activeUsers];
 
   return (
     <div
@@ -209,33 +209,28 @@ const ActiveUsersMarquee = () => {
     >
       <div className="flex items-center h-8">
         {/* Fixed Label */}
-        <div className="flex-shrink-0 flex items-center gap-2 px-4 bg-primary-700/50 h-full border-r border-white/20">
+        <div className="flex-shrink-0 flex items-center gap-2 px-4 bg-primary-700/50 h-full border-r border-white/20 z-10">
           <Users className="h-4 w-4" />
           <span className="text-xs font-semibold whitespace-nowrap">
             Online ({activeUsers.length})
           </span>
         </div>
 
-        {/* Scrolling Content */}
+        {/* Scrolling Content - Using CSS animation for smooth infinite scroll */}
         <div className="flex-1 overflow-hidden relative">
-          <motion.div
-            className="flex items-center gap-6 whitespace-nowrap"
-            animate={{
-              x: isPaused ? 0 : [0, -50 * activeUsers.length],
+          <div
+            className={cn(
+              "flex items-center gap-6 whitespace-nowrap animate-marquee",
+              isPaused && "animation-paused"
+            )}
+            style={{
+              animationDuration: `${Math.max(activeUsers.length * 8, 15)}s`,
             }}
-            transition={{
-              x: {
-                duration: activeUsers.length * 5,
-                repeat: Infinity,
-                ease: "linear",
-              },
-            }}
-            style={{ paddingLeft: "100%" }}
           >
             {marqueeContent.map((activeUser, index) => (
               <div
                 key={`${activeUser.username}-${index}`}
-                className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full backdrop-blur-sm"
+                className="flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full backdrop-blur-sm flex-shrink-0"
               >
                 {/* Online indicator */}
                 <Circle className="h-2 w-2 fill-green-400 text-green-400 animate-pulse" />
@@ -266,7 +261,7 @@ const ActiveUsersMarquee = () => {
                 </span>
               </div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </div>
     </div>
