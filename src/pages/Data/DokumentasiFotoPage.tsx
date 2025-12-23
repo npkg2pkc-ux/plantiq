@@ -394,120 +394,120 @@ export default function DokumentasiFotoPage({
   }, {} as Record<string, DokumentasiFoto[]>);
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dokumentasi Foto</h1>
-          <p className="text-gray-600">
-            Plant {plant} - {photos.length} foto
-          </p>
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6 pb-20 md:pb-6">
+      {/* Header - Mobile Optimized */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+              📸 Dokumentasi Foto
+            </h1>
+            <p className="text-sm text-gray-500">
+              Plant {plant} • {photos.length} foto
+            </p>
+          </div>
+
+          {/* Refresh Button - Small on mobile */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchPhotos}
+            disabled={loading}
+            className="h-9 w-9 p-0 md:h-10 md:w-auto md:px-4"
+          >
+            <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+            <span className="hidden md:inline ml-2">Refresh</span>
+          </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Cari foto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full sm:w-64"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={fetchPhotos}
-              disabled={loading}
-              className="flex-1 sm:flex-none"
-            >
-              <RefreshCw
-                className={cn("h-4 w-4 mr-2", loading && "animate-spin")}
-              />
-              Refresh
-            </Button>
-
-            {!viewOnly && (
-              <Button
-                onClick={openCameraModal}
-                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700"
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                Ambil Foto
-              </Button>
-            )}
-          </div>
+        {/* Search Bar - Full width on mobile */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Cari foto..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 w-full h-11 text-base rounded-xl bg-gray-50 border-gray-200 focus:bg-white"
+          />
         </div>
       </div>
 
       {/* Loading State */}
       {loading && (
-        <div className="flex justify-center py-12">
-          <Spinner />
+        <div className="flex justify-center py-16">
+          <div className="text-center">
+            <Spinner />
+            <p className="text-sm text-gray-500 mt-3">Memuat foto...</p>
+          </div>
         </div>
       )}
 
-      {/* Empty State */}
+      {/* Empty State - Mobile Friendly */}
       {!loading && photos.length === 0 && (
-        <Card className="p-12 text-center">
-          <Image className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+          <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+            <Image className="h-10 w-10 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">
             Belum Ada Foto
           </h3>
-          <p className="text-gray-500 mb-6">
+          <p className="text-sm text-gray-500 text-center mb-6">
             Mulai dokumentasi dengan mengambil foto pertama
           </p>
           {!viewOnly && (
             <Button
               onClick={openCameraModal}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 hover:bg-green-700 rounded-xl h-12 px-6"
             >
-              <Camera className="h-4 w-4 mr-2" />
+              <Camera className="h-5 w-5 mr-2" />
               Ambil Foto Sekarang
             </Button>
           )}
-        </Card>
+        </div>
       )}
 
-      {/* Photo Grid by Folder */}
+      {/* Photo Grid by Folder - Mobile Optimized */}
       {!loading && Object.keys(groupedPhotos).length > 0 && (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {Object.entries(groupedPhotos).map(([folder, folderPhotos]) => (
             <div key={folder}>
-              {/* Folder Header */}
-              <div className="flex items-center gap-2 mb-4">
-                <FolderOpen className="h-5 w-5 text-yellow-500" />
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {folder}
-                </h2>
-                <span className="text-sm text-gray-500">
-                  ({folderPhotos.length} foto)
-                </span>
+              {/* Folder Header - Compact on mobile */}
+              <div className="flex items-center justify-between mb-3 px-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                    <FolderOpen className="h-4 w-4 text-yellow-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-semibold text-gray-900 truncate">
+                      {folder}
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                      {folderPhotos.length} foto
+                    </p>
+                  </div>
+                </div>
                 {folderPhotos[0]?.folderUrl && (
                   <a
                     href={folderPhotos[0].folderUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="ml-auto text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1 flex-shrink-0"
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    Buka Folder
+                    <ExternalLink className="h-3 w-3" />
+                    <span className="hidden sm:inline">Buka</span>
                   </a>
                 )}
               </div>
 
-              {/* Photo Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {/* Photo Grid - 3 columns on mobile for better view */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 md:gap-3">
                 {folderPhotos.map((photo) => (
                   <motion.div
                     key={photo.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                    className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer active:scale-95 transition-transform shadow-sm"
                     onClick={() => openPreview(photo)}
                   >
                     {/* Thumbnail */}
@@ -522,29 +522,32 @@ export default function DokumentasiFotoPage({
                       }}
                     />
 
-                    {/* Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="absolute bottom-0 left-0 right-0 p-2">
-                        <p className="text-white text-xs truncate">
-                          {photo.tanggal}
-                        </p>
-                        {photo.keterangan && (
-                          <p className="text-white/80 text-xs truncate">
-                            {photo.keterangan}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Zoom Icon */}
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ZoomIn className="h-5 w-5 text-white drop-shadow-lg" />
+                    {/* Date Badge - Always visible on mobile */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1.5 md:p-2">
+                      <p className="text-white text-[10px] md:text-xs truncate">
+                        {photo.tanggal}
+                      </p>
                     </div>
                   </motion.div>
                 ))}
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Floating Action Button - Mobile Only */}
+      {!viewOnly && !loading && (
+        <div className="fixed bottom-20 right-4 md:hidden z-50">
+          <button
+            onClick={openCameraModal}
+            className="w-14 h-14 rounded-full bg-green-600 text-white shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+            style={{
+              boxShadow: "0 4px 14px rgba(34, 197, 94, 0.4)",
+            }}
+          >
+            <Camera className="h-6 w-6" />
+          </button>
         </div>
       )}
 
@@ -946,42 +949,40 @@ export default function DokumentasiFotoPage({
         </div>
       )}
 
-      {/* Form Modal - After Photo Captured */}
+      {/* Form Modal - After Photo Captured - Mobile Optimized */}
       <AnimatePresence>
         {showFormModal && capturedImage && (
           <Modal
             isOpen={showFormModal}
             onClose={closeCameraModal}
-            title="Upload Foto"
+            title="📤 Upload Foto"
             size="lg"
           >
             <div className="space-y-4">
               {/* Image Preview Thumbnail */}
-              <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+              <div className="relative bg-gray-100 rounded-xl overflow-hidden">
                 <img
                   src={capturedImage}
                   alt="Captured"
-                  className="w-full h-48 object-cover"
+                  className="w-full h-40 md:h-48 object-cover"
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => {
                     setShowFormModal(false);
                     setShowCameraModal(true);
                     retakePhoto();
                   }}
-                  className="absolute bottom-2 right-2 bg-white/90 hover:bg-white"
+                  className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 hover:bg-white rounded-lg text-sm font-medium text-gray-700 flex items-center gap-1 shadow-sm"
                 >
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Ganti Foto
-                </Button>
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Ganti
+                </button>
               </div>
 
               {/* Form */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Judul / Nama Folder <span className="text-red-500">*</span>
                   </label>
                   <Input
@@ -991,15 +992,15 @@ export default function DokumentasiFotoPage({
                     onChange={(e) =>
                       setFormData({ ...formData, judul: e.target.value })
                     }
-                    className="w-full"
+                    className="w-full h-11 text-base rounded-xl"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Foto akan disimpan di folder sesuai judul ini
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Foto akan dikelompokkan berdasarkan judul ini
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
                     Keterangan
                   </label>
                   <textarea
@@ -1008,8 +1009,8 @@ export default function DokumentasiFotoPage({
                     onChange={(e) =>
                       setFormData({ ...formData, keterangan: e.target.value })
                     }
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                    rows={2}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none text-base"
                   />
                 </div>
 
@@ -1017,7 +1018,7 @@ export default function DokumentasiFotoPage({
                   <Button
                     variant="outline"
                     onClick={closeCameraModal}
-                    className="flex-1"
+                    className="flex-1 h-12 rounded-xl text-base"
                     disabled={uploading}
                   >
                     Batal
@@ -1025,17 +1026,17 @@ export default function DokumentasiFotoPage({
                   <Button
                     onClick={handleUpload}
                     disabled={uploading || !formData.judul.trim()}
-                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    className="flex-1 h-12 rounded-xl text-base bg-green-600 hover:bg-green-700"
                   >
                     {uploading ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Mengupload...
+                        Uploading...
                       </>
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
-                        Upload Foto
+                        Upload
                       </>
                     )}
                   </Button>
@@ -1046,7 +1047,7 @@ export default function DokumentasiFotoPage({
         )}
       </AnimatePresence>
 
-      {/* Preview Modal */}
+      {/* Preview Modal - Mobile Optimized */}
       <AnimatePresence>
         {showPreviewModal && selectedPhoto && (
           <Modal
@@ -1055,81 +1056,99 @@ export default function DokumentasiFotoPage({
               setShowPreviewModal(false);
               setSelectedPhoto(null);
             }}
-            title={selectedPhoto.judul}
+            title=""
             size="xl"
           >
-            <div className="space-y-4">
+            <div className="space-y-4 -mt-2">
               {/* Full Image */}
-              <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+              <div className="relative bg-black rounded-xl overflow-hidden -mx-2 md:-mx-4">
                 <img
                   src={`https://drive.google.com/thumbnail?id=${selectedPhoto.fileId}&sz=w1200`}
                   alt={selectedPhoto.judul}
-                  className="w-full max-h-[60vh] object-contain"
+                  className="w-full max-h-[50vh] md:max-h-[60vh] object-contain"
                 />
               </div>
 
-              {/* Info */}
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Tanggal:</span>
-                  <span className="font-medium">{selectedPhoto.tanggal}</span>
+              {/* Title */}
+              <h3 className="text-lg font-semibold text-gray-900 truncate">
+                {selectedPhoto.judul}
+              </h3>
+
+              {/* Info Cards */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-xs text-gray-500 mb-0.5">Tanggal</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {selectedPhoto.tanggal}
+                  </p>
                 </div>
-                {selectedPhoto.keterangan && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Keterangan:</span>
-                    <span className="font-medium">
-                      {selectedPhoto.keterangan}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Diupload oleh:</span>
-                  <span className="font-medium">{selectedPhoto.uploadBy}</span>
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-xs text-gray-500 mb-0.5">Upload oleh</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {selectedPhoto.uploadBy}
+                  </p>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-3">
+              {selectedPhoto.keterangan && (
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-xs text-gray-500 mb-0.5">Keterangan</p>
+                  <p className="text-sm text-gray-900">
+                    {selectedPhoto.keterangan}
+                  </p>
+                </div>
+              )}
+
+              {/* Actions - Mobile Friendly */}
+              <div className="grid grid-cols-2 gap-2 pt-2">
                 <a
                   href={selectedPhoto.fileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1"
+                  className="block"
                 >
-                  <Button variant="outline" className="w-full">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Buka di Drive
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 rounded-xl text-sm"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1.5" />
+                    Buka Drive
                   </Button>
                 </a>
                 <a
                   href={`https://drive.google.com/uc?export=download&id=${selectedPhoto.fileId}`}
                   download
-                  className="flex-1"
+                  className="block"
                 >
-                  <Button variant="outline" className="w-full">
-                    <Download className="h-4 w-4 mr-2" />
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 rounded-xl text-sm"
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
                     Download
                   </Button>
                 </a>
-                {!viewOnly && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowPreviewModal(false);
-                      setShowDeleteModal(true);
-                    }}
-                    className="text-red-600 border-red-300 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
               </div>
+
+              {!viewOnly && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPreviewModal(false);
+                    setShowDeleteModal(true);
+                  }}
+                  className="w-full h-11 rounded-xl text-sm text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-1.5" />
+                  Hapus Foto
+                </Button>
+              )}
             </div>
           </Modal>
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - Mobile Optimized */}
       <AnimatePresence>
         {showDeleteModal && selectedPhoto && (
           <Modal
@@ -1138,33 +1157,33 @@ export default function DokumentasiFotoPage({
               setShowDeleteModal(false);
               setSelectedPhoto(null);
             }}
-            title="Hapus Foto"
+            title=""
             size="sm"
           >
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-red-100 rounded-full">
-                  <Trash2 className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-gray-900">
-                    Apakah Anda yakin ingin menghapus foto ini?
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Foto "{selectedPhoto.judul}" akan dihapus dari Google Drive.
-                    Tindakan ini tidak dapat dibatalkan.
-                  </p>
-                </div>
+            <div className="space-y-4 text-center py-2">
+              <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="h-8 w-8 text-red-600" />
               </div>
 
-              <div className="flex gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  Hapus Foto?
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Foto "
+                  <span className="font-medium">{selectedPhoto.judul}</span>"
+                  akan dihapus permanen dari Google Drive.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
                   onClick={() => {
                     setShowDeleteModal(false);
                     setSelectedPhoto(null);
                   }}
-                  className="flex-1"
+                  className="flex-1 h-12 rounded-xl"
                   disabled={uploading}
                 >
                   Batal
@@ -1172,7 +1191,7 @@ export default function DokumentasiFotoPage({
                 <Button
                   onClick={handleDelete}
                   disabled={uploading}
-                  className="flex-1 bg-red-600 hover:bg-red-700"
+                  className="flex-1 h-12 rounded-xl bg-red-600 hover:bg-red-700"
                 >
                   {uploading ? (
                     <>
@@ -1180,10 +1199,7 @@ export default function DokumentasiFotoPage({
                       Menghapus...
                     </>
                   ) : (
-                    <>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Hapus
-                    </>
+                    "Hapus"
                   )}
                 </Button>
               </div>
